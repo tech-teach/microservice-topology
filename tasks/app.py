@@ -5,10 +5,13 @@ import uuid
 # external libraries
 from sanic.response import json
 from sanic import Sanic
+
+from sanic_cors import CORS
 # TODO import metrics module
 
 
 app = Sanic(__name__)
+CORS(app)
 
 
 @app.route('/tasks', methods=['POST'])
