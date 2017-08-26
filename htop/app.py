@@ -1,6 +1,6 @@
 from apistar.frameworks.wsgi import WSGIApp as App
 from apistar.http import Response, Request, QueryParam
-from apistar import Route
+from apistar import Route, Component
 from psutil import cpu_percent
 
 
@@ -22,15 +22,33 @@ class CORSApp(App):
         return Response(content, status, headers, content_type)
 
 
-def cpu(interval: QueryParam):
+class Interval(object):
+    """
+    Wraps a cpu interval.
+    """
+    def __init__(self, value):
+        self.value = float(value)
+        if self.value < 0:
+            raise ValueError('Interval must be positive.')
+
+
+def fetch_interval(interval: QueryParam):
+    """
+    Builds an interval out of the provided query param.
+    """
+    try:
+        return Interval(interval)
+    except (ValueError, TypeError):
+        return Interval(0.1)
+
+
+def cpu(interval: Interval):
     """
     Retrieves the cpu percentage in an interval of time.
     """
-    # TODO Return an error in case the query param cannot be casted to float
-    interval = float(interval or 1.0)
     return {
-        'cpu': cpu_percent(interval=interval, percpu=True),
-        'interval': interval
+        'cpu': cpu_percent(interval=interval.value, percpu=True),
+        'interval': interval.value
     }
 
 
@@ -38,5 +56,9 @@ ROUTES = [
     Route('/htop', 'GET', cpu),
 ]
 
+COMPONENTS = [
+    Component(Interval, init=fetch_interval)
+]
 
-app = CORSApp(routes=ROUTES)
+
+app = CORSApp(routes=ROUTES, components=COMPONENTS)
