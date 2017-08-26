@@ -8,6 +8,8 @@ import sys
 from sklearn.metrics import pairwise, accuracy_score
 import numpy as np
 
+__version__ = '0.1.0'
+
 NOT_BOOL_METRICS = [
     'euclidean',
     'l2',
@@ -41,7 +43,6 @@ BOOL_METRIC = [
 
 
 def get_accuracy(file_handler, n_workers):
-    accuracy_list = []
 
     csv_content = np.loadtxt(
         file_handler,  # Csv file to process
@@ -50,6 +51,8 @@ def get_accuracy(file_handler, n_workers):
 
     data = csv_content[:, 0:-1]
     labels = csv_content[:, -1]
+
+    accuracies = dict()
 
     for metric in NOT_BOOL_METRICS:
         matrix_distances = pairwise.pairwise_distances(
@@ -68,6 +71,6 @@ def get_accuracy(file_handler, n_workers):
 
         accuracy = accuracy_score(labels, supposed_labels)
 
-        accuracy_list.append(accuracy)
+        accuracies[metric] = accuracy
 
-    return accuracy_list
+    return accuracies
