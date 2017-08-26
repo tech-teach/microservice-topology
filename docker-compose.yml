@@ -20,6 +20,14 @@ services:
         environment:
             VIRTUAL_HOST: "*/tasks"
 
+    ui:
+        image: ui
+        build: ./ui
+        ports:
+            - 80
+        environment:
+            VIRTUAL_HOST: "*/ui*"
+
     lb:
         image: dockercloud/haproxy
         ports:
@@ -30,3 +38,4 @@ services:
         links:
             - htop
             - tasks
+            - ui
