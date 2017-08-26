@@ -11,6 +11,15 @@ services:
         environment:
             VIRTUAL_HOST: "*/htop"
 
+    tasks:
+        image: tasks
+        build: ./tasks
+        command: python app.py
+        ports:
+            - 80
+        environment:
+            VIRTUAL_HOST: "*/tasks"
+
     lb:
         image: dockercloud/haproxy
         ports:
@@ -20,3 +29,4 @@ services:
             - /var/run/docker.sock:/var/run/docker.sock
         links:
             - htop
+            - tasks
