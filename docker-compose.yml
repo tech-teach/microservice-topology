@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+    htop:
+        image: htop
+        build: ./htop
+        command: apistar run --port 80 --host 0.0.0.0
+        ports:
+            - 80
+        environment:
+            VIRTUAL_HOST: "*/htop"
+
+    lb:
+        image: dockercloud/haproxy
+        ports:
+            - '80:80'
+            - '1936:1936'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        links:
+            - htop
