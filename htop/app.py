@@ -23,7 +23,9 @@ class CORSApp(App):
 
 
 class Interval(object):
-
+    """
+    Wraps a cpu interval.
+    """
     def __init__(self, value):
         self.value = float(value)
         if self.value < 0:
@@ -31,21 +33,22 @@ class Interval(object):
 
 
 def fetch_interval(interval: QueryParam):
+    """
+    Builds an interval out of the provided query param.
+    """
     try:
         return Interval(interval)
-    except ValueError:
-        return None
+    except (ValueError, TypeError):
+        return Interval(0.1)
 
 
 def cpu(interval: Interval):
     """
     Retrieves the cpu percentage in an interval of time.
     """
-    # TODO Return an error in case the query param cannot be casted to float
-    interval = interval.value if interval else 1.0
     return {
-        'cpu': cpu_percent(interval=interval, percpu=True),
-        'interval': interval
+        'cpu': cpu_percent(interval=interval.value, percpu=True),
+        'interval': interval.value
     }
 
 
