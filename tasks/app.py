@@ -3,12 +3,11 @@ import io
 import uuid
 
 # external libraries
-from sanic.response import json
+from sanic.response import json, stream
 from sanic import Sanic
 
 from sanic_cors import CORS
-# TODO import metrics module
-
+import metrics as mt
 
 app = Sanic(__name__)
 CORS(app)
@@ -27,12 +26,18 @@ def tasks(request):
     file_handler = io.StringIO(request_file)
 
     # TODO call accuracy function from  metrics module
-    # response = get_accuracy(file_handler, 1)
+    async def streaming_fn(response):
+        for accuracy in mt.get_accuracy(file_handler, 4):
+            response.write(accuracy)
+    return stream(streaming_fn, content_type='application/json')
+    '''
+    response = mt.get_accuracy(file_handler, 4)
     # return response
 
     return json({
         "uuid": uuid.uuid4().hex
     })
+    '''
 
 
 if __name__ == "__main__":

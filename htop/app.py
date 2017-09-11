@@ -39,7 +39,7 @@ def fetch_interval(interval: QueryParam):
     try:
         return Interval(interval)
     except (ValueError, TypeError):
-        return Interval(0.1)
+        return Interval(0.5)
 
 
 def cpu(interval: Interval):

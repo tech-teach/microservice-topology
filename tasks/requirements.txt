@@ -1,2 +1,5 @@
 sanic==0.6.0
 sanic-cors==0.6.0.0
+sklearn
+numpy
+scipy

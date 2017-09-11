@@ -29,7 +29,7 @@ class Htop extends Component {
   render() {
     return (
         <p>
-          {this.state.cpu && this.state.cpu.join(', ')}
+          {this.state.cpu && this.state.cpu.join(", ")}
         </p>
     );
   }
@@ -44,7 +44,7 @@ Htop.propTypes = {
 }
 
 Htop.defaultProps = {
-    ms: 100
+    ms: 750
 }
 
 export default Htop;
