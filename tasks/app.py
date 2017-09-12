@@ -13,8 +13,11 @@ app = Sanic(__name__)
 CORS(app)
 
 
-@app.route('/tasks', methods=['POST'])
+@app.route('/tasks', methods=['POST', 'OPTIONS'])
 def tasks(request):
+    print(request.json)
+    if request.method == 'OPTIONS':
+        return json({'status': 'ok'})
     try:
         request_file = request.files.get('file').body.decode("unicode_escape")
     except Exception:
@@ -25,19 +28,12 @@ def tasks(request):
 
     file_handler = io.StringIO(request_file)
 
-    # TODO call accuracy function from  metrics module
-    async def streaming_fn(response):
-        for accuracy in mt.get_accuracy(file_handler, 4):
-            response.write(accuracy)
-    return stream(streaming_fn, content_type='application/json')
-    '''
     response = mt.get_accuracy(file_handler, 4)
-    # return response
 
     return json({
         "uuid": uuid.uuid4().hex
     })
-    '''
+
 
 
 if __name__ == "__main__":

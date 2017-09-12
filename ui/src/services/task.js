@@ -6,9 +6,12 @@ class TaskService {
     this.url = 'http://localhost/tasks';
   }
 
-  get(then) {
+
+  post(then) {
     request
-      .get(this.url)
+      .post(this.url)
+      .set('Content-Type', 'multipart/form-data')
+      .send(this.props.file)
       .end((err, res) => {
         if (!err) then(res);
         else console.error(err);
