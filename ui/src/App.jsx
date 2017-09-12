@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 
 import Htop from './components/Htop';
 import FileUpload from './components/FileUpload'
-import logo from './logo.svg';
 import './App.css';
 
 

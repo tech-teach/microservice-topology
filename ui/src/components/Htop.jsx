@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import HtopService from '../services/htop';
+import _ from 'lodash';
 
 
 class Htop extends Component {
@@ -28,9 +29,13 @@ class Htop extends Component {
 
   render() {
     return (
-        <p>
-          {this.state.cpu && this.state.cpu.join(", ")}
-        </p>
+      <div>
+        {_.map(this.state.cpu, cpu => (
+            <center>
+              <progress value={cpu} max="100"></progress>
+            </center>
+        ))}
+      </div>
     );
   }
 }
