@@ -15,14 +15,13 @@ CORS(app)
 
 @app.route('/tasks', methods=['POST', 'OPTIONS'])
 def tasks(request):
-    print(request.json)
     if request.method == 'OPTIONS':
-        return json({'status': 'ok'})
+        return json({})
     try:
-        request_file = request.files.get('file').body.decode("unicode_escape")
-    except Exception:
+        request_file = request.files.get('file').body.decode('unicode_escape')
+    except Exception as e:
         return json(
-            {"error": "File has not found"},
+            {'error': 'File has not been found', 'message': f'{e}'},
             status=400
         )
 
@@ -31,7 +30,8 @@ def tasks(request):
     response = mt.get_accuracy(file_handler, 4)
 
     return json({
-        "uuid": uuid.uuid4().hex
+        "uuid": uuid.uuid4().hex,
+        # "response": response
     })
 
 

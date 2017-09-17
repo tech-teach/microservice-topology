@@ -30,8 +30,8 @@ class Htop extends Component {
   render() {
     return (
       <div>
-        {_.map(this.state.cpu, cpu => (
-            <center>
+        {_.map(this.state.cpu, (cpu, id) => (
+            <center key={id}>
               <progress value={cpu} max="100"></progress>
             </center>
         ))}

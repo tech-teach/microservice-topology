@@ -16,14 +16,13 @@ class FileUpload extends React.Component {
         reader.readAsText(file);
     };
 
-    sendFile() {
-        var files = document.getElementById("uploadFile").files;
-        var text = files[0].getAsText("utf-8");
+    sendFile(event) {
+        event.preventDefault();
+        const file = event.target.file.files[0];
+        console.log(file);
         request
             .post('http://localhost/tasks')
-            .send({'file': text})
-            .set('Content-Type', 'application/json')
-            .set('Accept', 'application/json')
+            .attach('file', file)
             .then(res => {
                 console.log(res);
             }, err => {
@@ -33,9 +32,12 @@ class FileUpload extends React.Component {
 
     render() {
         return (
-            <form className="form-group">
-                <input id="uploadFile" type="file" encType="multipart/form-data" className="form-group" />
-                <button onClick={this.sendFile.bind(this)} className="btn btn-primary">Upload</button>
+            <form
+                className="form-group"
+                encType="multipart/form-data"
+                onSubmit={this.sendFile.bind(this)} >
+                <input name='file' id="uploadFile" type="file" className="form-group" />
+                <input type="submit" className="btn btn-primary" value="Upload" />
             </form>
         );
     }
