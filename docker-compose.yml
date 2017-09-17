@@ -19,6 +19,9 @@ services:
             - 80
         environment:
             VIRTUAL_HOST: "*/tasks"
+            FILE_STORAGE: /run/files
+        volumes:
+            - file-storage:/run/files:ro
 
     ui:
         image: ui
@@ -39,3 +42,6 @@ services:
             - htop
             - tasks
             - ui
+
+volumes:
+    file-storage:

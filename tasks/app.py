@@ -1,5 +1,5 @@
 # internal libraries
-import io
+import os
 import uuid
 
 # external libraries
@@ -12,6 +12,29 @@ import metrics as mt
 
 app = Sanic(__name__)
 CORS(app)
+
+
+class StorageUnit(object):
+    """
+    Abstraction for an storage unit.
+    """
+    def __init__(self, root=None):
+        if root is None:
+            self.root = os.getenv('FILE_STORAGE')
+        else:
+            self.root = root
+
+    def path(self, name):
+        """
+        Create a path relative to the storage units root.
+        """
+        return os.path.join(self.root, name)
+
+    def store_unique(self, file):
+        """
+        Stores the file with a sha1 of its contents to avoid duplication.
+        """
+        raise NotImplementedError('Darn!')
 
 
 @app.route('/tasks', methods=['POST', 'OPTIONS'])
@@ -30,6 +53,8 @@ def tasks(request):
     # Further validate file if need be
 
     # Write file to the filesystem
+    storage = StorageUnit()
+    path = storage.path('hola.csv')
 
     # Create Task row in the database
 
@@ -37,7 +62,7 @@ def tasks(request):
 
     # Return to the user with the task uid and 201 created
 
-    return json({'uid': uuid.uuid4().hex}, status=201)
+    return json({'uid': uuid.uuid4().hex, 'path': path}, status=201)
 
 
 @app.route('/tasks/<uid>', methods=['GET', 'OPTIONS'])
