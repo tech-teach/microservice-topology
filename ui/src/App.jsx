@@ -13,7 +13,7 @@ class App extends Component {
           <FileUpload route='/tasks' />
         </div>
         <div>
-          <Htop ms={100} />
+          <Htop ms={750} />
         </div>
       </div>
     );

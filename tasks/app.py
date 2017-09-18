@@ -38,7 +38,7 @@ class StorageUnit(object):
 
 
 @app.route('/tasks', methods=['POST', 'OPTIONS'])
-def tasks(request):
+async def tasks(request):
     """
     Receive a file and enqueue processing.
     """
@@ -66,7 +66,7 @@ def tasks(request):
 
 
 @app.route('/tasks/<uid>', methods=['GET', 'OPTIONS'])
-def task(request, uid):
+async def task(request, uid):
     """
     Inform the user about a tasks status.
     """

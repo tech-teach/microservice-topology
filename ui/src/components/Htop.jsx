@@ -1,6 +1,16 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import HtopService from '../services/htop';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import CircularProgress from 'material-ui/CircularProgress';
+import {
+  Table,
+  TableBody,
+  TableHeader,
+  TableHeaderColumn,
+  TableRow,
+  TableRowColumn,
+} from 'material-ui/Table';
 import _ from 'lodash';
 
 
@@ -11,13 +21,16 @@ class Htop extends Component {
     this.intervalId = null;
     this.state = {
       cpu: null,
+      memory: null
     };
   }
 
   componentDidMount() {
     const htop = new HtopService();
     this.intervalId = setInterval(
-      () => htop.get(res => this.setState({cpu: res.body.cpu})),
+      () => htop.get(res => this.setState(
+        {cpu: res.body.cpu, memory: res.body.memory}
+      )),
       this.props.ms,
     );
   }
@@ -29,13 +42,66 @@ class Htop extends Component {
 
   render() {
     return (
-      <div>
-        {_.map(this.state.cpu, (cpu, id) => (
-            <center key={id}>
-              <progress value={cpu} max="100"></progress>
-            </center>
-        ))}
-      </div>
+      <MuiThemeProvider>
+        <div>
+        <center>
+          <p>Used memory: {
+            this.state.memory?(this.state.memory.used/1000000).toFixed(0):0
+          }/{
+            this.state.memory?((
+              this.state.memory.free + this.state.memory.used
+            )/1000000).toFixed(0):0
+          }Mb</p>
+          <CircularProgress
+            mode="determinate"
+            value={this.state.memory?this.state.memory.used:0}
+            size={30}
+            thickness={3}
+            max={
+              this.state.memory?
+              this.state.memory.free + this.state.memory.used
+              :0
+            }
+          />
+        </center>
+        <Table showCheckboxes="false">
+          <TableHeader>
+            <TableRow>
+              <TableHeaderColumn>CPU</TableHeaderColumn>
+              <TableHeaderColumn>Frequency</TableHeaderColumn>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+              {_.map(this.state.cpu, (cpu, id) => (
+              <TableRow key={id}>
+                <TableRowColumn>
+                  <pre>{cpu.percent.toFixed(0)}%
+                    <CircularProgress
+                      mode="determinate"
+                      value={cpu.percent}
+                      size={30}
+                      thickness={3}
+                      max={100}
+                    />
+                  </pre>
+                </TableRowColumn>
+                <TableRowColumn>
+                  <pre>{cpu.frequency.current.toFixed(0)}Mhz
+                    <CircularProgress
+                      mode="determinate"
+                      value={cpu.frequency.current}
+                      size={30}
+                      thickness={3}
+                      max={cpu.frequency.max}
+                    />
+                  </pre>
+                </TableRowColumn>
+              </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+        </div>
+      </MuiThemeProvider>
     );
   }
 }
@@ -49,7 +115,7 @@ Htop.propTypes = {
 }
 
 Htop.defaultProps = {
-    ms: 750
+    ms: 1000
 }
 
 export default Htop;
