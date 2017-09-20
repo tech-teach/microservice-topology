@@ -21,7 +21,7 @@ services:
             VIRTUAL_HOST: "*/tasks"
             FILE_STORAGE: /run/files
         volumes:
-            - file-storage:/run/files:ro
+            - file-storage:/run/files
 
     ui:
         image: ui

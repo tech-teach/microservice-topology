@@ -75,7 +75,7 @@ class Htop extends Component {
               {_.map(this.state.cpu, (cpu, id) => (
               <TableRow key={id}>
                 <TableRowColumn>
-                  <pre>{cpu.percent.toFixed(0)}%
+                  <pre>
                     <CircularProgress
                       mode="determinate"
                       value={cpu.percent}
@@ -83,10 +83,11 @@ class Htop extends Component {
                       thickness={3}
                       max={100}
                     />
+                    {cpu.percent.toFixed(0)}%
                   </pre>
                 </TableRowColumn>
                 <TableRowColumn>
-                  <pre>{cpu.frequency.current.toFixed(0)}Mhz
+                  <pre>
                     <CircularProgress
                       mode="determinate"
                       value={cpu.frequency.current}
@@ -94,6 +95,7 @@ class Htop extends Component {
                       thickness={3}
                       max={cpu.frequency.max}
                     />
+                    {cpu.frequency.current.toFixed(0)}Mhz
                   </pre>
                 </TableRowColumn>
               </TableRow>

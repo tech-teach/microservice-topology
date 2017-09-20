@@ -1,13 +1,26 @@
 # internal libraries
-import os
-import uuid
+import uuid, hashlib, binascii, os, json
 
 # external libraries
 from sanic.response import json, stream
+from sanic_cors import CORS
 from sanic import Sanic
 
-from sanic_cors import CORS
+from pony.orm import db_session
+
+from models import Task, AccuracyScore
 import metrics as mt
+
+try:
+    AccuracyScore.bind(
+        'sqlite',
+        os.path.join(os.getenv('FILE_STORAGE'), 'db.sqlite'),
+        create_db=True
+    )
+except Exception as e:
+    print(e)
+else:
+    AccuracyScore.generate_mapping(create_tables=True)
 
 
 app = Sanic(__name__)
@@ -30,11 +43,28 @@ class StorageUnit(object):
         """
         return os.path.join(self.root, name)
 
-    def store_unique(self, file):
+    def store_unique(self, file_text):
         """
         Stores the file with a sha1 of its contents to avoid duplication.
         """
-        raise NotImplementedError('Darn!')
+        dk = hashlib.pbkdf2_hmac(
+            'sha1',
+            file_text.encode(),
+            b'',
+            100000
+        )
+        file_name = binascii.hexlify(dk).decode()
+        file_path = f'{self.path(file_name)}.csv'
+        file_was_created = os.path.isfile(file_path)
+        if not file_was_created:
+            with open(file_path, 'a+') as file:
+                file.write(file_text)
+
+        return {
+            'fileName': file_name,
+            'filePath': file_path,
+            'fileWasCreated': file_was_created
+        }
 
 
 @app.route('/tasks', methods=['POST', 'OPTIONS'])
@@ -54,7 +84,12 @@ async def tasks(request):
 
     # Write file to the filesystem
     storage = StorageUnit()
-    path = storage.path('hola.csv')
+    file_status = storage.store_unique(file.body.decode())
+
+    with db_session:
+        task = Task(
+            tasFilename=file_status.get('fileName'),
+        )
 
     # Create Task row in the database
 
@@ -62,7 +97,14 @@ async def tasks(request):
 
     # Return to the user with the task uid and 201 created
 
-    return json({'uid': uuid.uuid4().hex, 'path': path}, status=201)
+    return json(
+        {
+            'uid': task.tasId,
+            'path': file_status.get('filePath'),
+            'fileCreated': file_status.get('fileWasCreated')
+        },
+        status=201
+    )
 
 
 @app.route('/tasks/<uid>', methods=['GET', 'OPTIONS'])
@@ -73,14 +115,13 @@ async def task(request, uid):
     # Find task by uid
     # If not found, you'now not found
     # return task status
+    task = Task.select(lambda t: t.tasId == uid).first()
+
     return json({
-        'uid': uid,
-        'status': 'complete',
-        'errors': None,
-        'accuracies': {
-            'something': 1.0,
-            'something_else': 0.5,
-        },
+        'uid': task.tasId,
+        'status': task.tasStatus,
+        'errors': json.loads(task.tasErrors),
+        'accuracies': json.loads(task.tasAccuracies),
     })
 
 
