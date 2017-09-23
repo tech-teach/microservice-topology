@@ -1,2 +1,6 @@
-sanic==0.6.0
-sanic-cors==0.6.0.0
+sanic
+sanic-cors
+sklearn
+numpy
+scipy
+pony

@@ -1,64 +1,58 @@
-from apistar.frameworks.wsgi import WSGIApp as App
-from apistar.http import Response, Request, QueryParam
-from apistar import Route, Component
-from psutil import cpu_percent
+from psutil import cpu_percent, cpu_freq, virtual_memory
+
+from sanic.response import json
+from sanic import Sanic
+
+from sanic_cors import CORS
 
 
-class CORSApp(App):
-    """
-    Wraps an app, so that it injects CORS headers.
-    """
-
-    def finalize_response(self, response: Response) -> Response:
-        """
-        Inject cors headers and finalize.
-        """
-        response = super().finalize_response(response)
-        content, status, headers, content_type = response
-        headers['Access-Control-Allow-Origin'] = '*'
-        headers['Access-Control-Allow-Headers'] = 'Origin, Content-Type, Authorization'
-        headers['Access-Control-Allow-Credentials'] = 'true'
-        headers['Access-Control-Allow-Methods'] = 'GET'
-        return Response(content, status, headers, content_type)
+app = Sanic(__name__)
+CORS(app)
 
 
-class Interval(object):
-    """
-    Wraps a cpu interval.
-    """
-    def __init__(self, value):
-        self.value = float(value)
-        if self.value < 0:
-            raise ValueError('Interval must be positive.')
+def get_cpu_info():
+    cpu_info = {
+        'percent': cpu_percent(interval=0.5, percpu=True),
+        'frequency': [
+            {
+                'current': freq.current,
+                'min': freq.min,
+                'max': freq.max
+            }
+            for freq in cpu_freq(percpu=True)
+        ]
+    }
 
+    return [dict(zip(cpu_info, col)) for col in zip(*cpu_info.values())]
 
-def fetch_interval(interval: QueryParam):
-    """
-    Builds an interval out of the provided query param.
-    """
-    try:
-        return Interval(interval)
-    except (ValueError, TypeError):
-        return Interval(0.1)
-
-
-def cpu(interval: Interval):
-    """
-    Retrieves the cpu percentage in an interval of time.
-    """
+def get_memory_info():
+    memory_info = virtual_memory()
     return {
-        'cpu': cpu_percent(interval=interval.value, percpu=True),
-        'interval': interval.value
+        'free': memory_info.free,
+        'used': memory_info.used,
+        'percent': memory_info.percent
     }
 
 
-ROUTES = [
-    Route('/htop', 'GET', cpu),
-]
+@app.route('/htop', methods=['GET', 'OPTIONS'])
+async def cpu(request):
+    """
+    Retrieves the cpu percentage in an interval of time.
+    """
 
-COMPONENTS = [
-    Component(Interval, init=fetch_interval)
-]
+    if request.method == 'OPTIONS':
+        return json({})
+
+    return json({
+        'cpu': get_cpu_info(),
+        'memory': get_memory_info(),
+        'interval': 0.5
+    })
 
 
-app = CORSApp(routes=ROUTES, components=COMPONENTS)
+if __name__ == "__main__":
+    app.run(
+        debug=True,
+        host="0.0.0.0",
+        port=80
+    )
