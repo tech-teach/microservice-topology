@@ -14,7 +14,7 @@ class Task(TASKS.Entity):
     """
     Describes a metrics evaluation task.
     """
-    uid = PrimaryKey(str, default=lambda: uuid.uuid4().hex)
+    uid = Required(uuid.UUID, default=uuid.uuid4)
     filename = Required(str)
     status = Required(str, default='in progress')
     errors = Optional(str)

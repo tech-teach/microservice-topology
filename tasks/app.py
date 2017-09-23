@@ -118,6 +118,12 @@ async def task(_request, uid):
     with db_session:
         task = Task.select(lambda t: t.uid == uid).first()
 
+    if task is None:
+        return response.json(
+            {'error': f'A task with uid: "{uid}" was not found'},
+            status=400
+        )
+
     return response.json({
         'uid': task.uid,
         'status': task.status,
