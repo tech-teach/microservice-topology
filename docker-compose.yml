@@ -18,10 +18,12 @@ services:
         ports:
             - 80
         environment:
-            VIRTUAL_HOST: "*/tasks"
+            VIRTUAL_HOST: "*/tasks/*"
             FILE_STORAGE: /run/files
+            DB_STORAGE: /run/db
         volumes:
             - file-storage:/run/files
+            - database-storage:/run/db
 
     ui:
         image: ui
@@ -29,7 +31,7 @@ services:
         ports:
             - 80
         environment:
-            VIRTUAL_HOST: "*/ui*"
+            VIRTUAL_HOST: "*/ui, */ui*"
 
     lb:
         image: dockercloud/haproxy
@@ -45,3 +47,4 @@ services:
 
 volumes:
     file-storage:
+    database-storage:

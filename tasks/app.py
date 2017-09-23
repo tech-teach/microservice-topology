@@ -1,30 +1,30 @@
 # internal libraries
-import uuid, hashlib, binascii, os, json
+import uuid
+import hashlib
+import binascii
+import os
+import json
 
 # external libraries
-from sanic.response import json, stream
 from sanic_cors import CORS
-from sanic import Sanic
+from sanic import Sanic, response
 
 from pony.orm import db_session
 
-from models import Task, AccuracyScore
+from models import Task, TASKS
 import metrics as mt
 
-try:
-    AccuracyScore.bind(
-        'sqlite',
-        os.path.join(os.getenv('FILE_STORAGE'), 'db.sqlite'),
-        create_db=True
-    )
-except Exception as e:
-    print(e)
-else:
-    AccuracyScore.generate_mapping(create_tables=True)
+
+TASKS.bind(
+    'sqlite',
+    os.path.join(os.getenv('DB_STORAGE'), 'db.sqlite'),
+    create_db=True
+)
+TASKS.generate_mapping(create_tables=True)
 
 
-app = Sanic(__name__)
-CORS(app)
+APP = Sanic(__name__)
+CORS(APP)
 
 
 class StorageUnit(object):
@@ -67,18 +67,18 @@ class StorageUnit(object):
         }
 
 
-@app.route('/tasks', methods=['POST', 'OPTIONS'])
+@APP.route('/tasks', methods=['POST', 'OPTIONS'])
 async def tasks(request):
     """
     Receive a file and enqueue processing.
     """
 
     if request.method == 'OPTIONS':
-        return json({})
+        return response.json({})
 
     file = request.files.get('file')
     if file is None:
-        return json({'error': 'A file is required'}, status=400)
+        return response.json({'error': 'A file is required'}, status=400)
 
     # Further validate file if need be
 
@@ -88,7 +88,7 @@ async def tasks(request):
 
     with db_session:
         task = Task(
-            tasFilename=file_status.get('fileName'),
+            filename=file_status.get('fileName'),
         )
 
     # Create Task row in the database
@@ -97,9 +97,9 @@ async def tasks(request):
 
     # Return to the user with the task uid and 201 created
 
-    return json(
+    return response.json(
         {
-            'uid': task.tasId,
+            'uid': task.uid,
             'path': file_status.get('filePath'),
             'fileCreated': file_status.get('fileWasCreated')
         },
@@ -107,26 +107,27 @@ async def tasks(request):
     )
 
 
-@app.route('/tasks/<uid>', methods=['GET', 'OPTIONS'])
-async def task(request, uid):
+@APP.route('/tasks/<uid>', methods=['GET', 'OPTIONS'])
+async def task(_request, uid):
     """
     Inform the user about a tasks status.
     """
     # Find task by uid
     # If not found, you'now not found
     # return task status
-    task = Task.select(lambda t: t.tasId == uid).first()
+    with db_session:
+        task = Task.select(lambda t: t.uid == uid).first()
 
-    return json({
-        'uid': task.tasId,
-        'status': task.tasStatus,
-        'errors': json.loads(task.tasErrors),
-        'accuracies': json.loads(task.tasAccuracies),
+    return response.json({
+        'uid': task.uid,
+        'status': task.status,
+        'errors': json.loads(task.errors),
+        'accuracies': json.loads(task.accuracies),
     })
 
 
 if __name__ == "__main__":
-    app.run(
+    APP.run(
         debug=True,
         host="0.0.0.0",
         port=80

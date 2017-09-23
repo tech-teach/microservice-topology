@@ -1,17 +1,23 @@
+"""
+Describes the database models.
+"""
 import uuid
 
 from datetime import datetime
-from pony.orm import *
+from pony.orm import Database, PrimaryKey, Required, Optional
 
 
-AccuracyScore = Database()
+TASKS = Database()
 
 
-class Task(AccuracyScore.Entity):
-    tasId = PrimaryKey(str, default=uuid.uuid4().hex)
-    tasFilename = Required(str)
-    tasStatus = Required(str, default='in progress')
-    tasErrors = Required(str, default='[]')
-    tasAccuracies = Required(str, default='{}')
-    tasCreated = Required(datetime, default=datetime.now())
-    tasUpdated = Required(datetime, default=datetime.now())
+class Task(TASKS.Entity):
+    """
+    Describes a metrics evaluation task.
+    """
+    uid = PrimaryKey(str, default=lambda: uuid.uuid4().hex)
+    filename = Required(str)
+    status = Required(str, default='in progress')
+    errors = Optional(str)
+    accuracies = Optional(str)
+    created = Required(datetime, default=datetime.now())
+    updated = Required(datetime, default=datetime.now())
