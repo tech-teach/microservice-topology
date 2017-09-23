@@ -41,7 +41,7 @@ async def tasks(request):
         task = Task(filename=filename)
 
     # Enqueue task excecution with the uuid
-    queue().enqueue('tasks.process_file', task.uid)
+    queue().enqueue('jobs.process_file', task.uid)
 
     # Return to the user with the task uid and 201 created
 

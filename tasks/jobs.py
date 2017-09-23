@@ -1,7 +1,8 @@
 """
 Abstract tasks.
 """
-import csv
+import json
+import logging
 
 from pony.orm import db_session
 from redis import Redis
@@ -9,6 +10,7 @@ from rq import Queue
 
 from models import Task
 from storage import StorageUnit
+from metrics import accuracies, MetricsError
 
 
 def queue():
@@ -25,8 +27,16 @@ def process_file(uid):
     """
     storage = StorageUnit()
     task = Task.select(lambda t: t.uid == uid).first()
-    file = storage.open(task.filename, 'rb')
+    file = storage.open(task.filename, 'r')
     # Call metrics from here
-    # Store the results or store the errors
-    _reader = csv.reader(file)
-    task.status = 'complete'
+    logger = logging.getLogger()
+    try:
+        metrics = accuracies(file, 1)
+        task.status = 'complete'
+        task.accuracies = json.dumps(metrics)
+    except MetricsError as err:
+        task.status = 'failed'
+        task.errors = json.dumps({
+            'error': 'Failed to process file.',
+            'message': f'{err}',
+        })
