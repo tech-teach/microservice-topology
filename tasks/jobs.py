@@ -2,7 +2,6 @@
 Abstract tasks.
 """
 import json
-import logging
 
 from pony.orm import db_session
 from redis import Redis
@@ -29,7 +28,6 @@ def process_file(uid):
     task = Task.select(lambda t: t.uid == uid).first()
     file = storage.open(task.filename, 'r')
     # Call metrics from here
-    logger = logging.getLogger()
     try:
         metrics = accuracies(file, 1)
         task.status = 'complete'
