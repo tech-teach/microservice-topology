@@ -20,6 +20,8 @@ class Task(TASKS.Entity):
     status = Required(str, default='in progress')
     errors = Optional(str)
     accuracies = Optional(str)
+    progress = Optional(float, default=0.0)
+    canceled = Required(bool, default=False)
     created = Required(datetime, default=datetime.now())
     updated = Required(datetime, default=datetime.now())
 

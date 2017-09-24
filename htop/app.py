@@ -46,7 +46,7 @@ async def cpu(request):
     return json({
         'cpu': get_cpu_info(),
         'memory': get_memory_info(),
-        'interval': 0.5
+        'interval': 0.3
     })
 
 

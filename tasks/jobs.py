@@ -3,7 +3,7 @@ Abstract tasks.
 """
 import json
 
-from pony.orm import db_session
+from pony.orm import db_session, commit
 from redis import Redis
 from rq import Queue
 
@@ -29,9 +29,22 @@ def process_file(uid):
     file = storage.open(task.filename, 'r')
     # Call metrics from here
     try:
-        metrics = accuracies(file, 1)
+        for acc in accuracies(file, 4):
+            all_accuracies = (
+                json.loads(task.accuracies)
+                if task.accuracies else list()
+            )
+            all_accuracies.append(
+                {acc.get('accuracyName'): acc.get('accuracyResult')}
+            )
+
+            task.accuracies = json.dumps(all_accuracies)
+            task.progress = acc.get('progress')
+            commit()
+            if task.canceled:
+                break
+
         task.status = 'complete'
-        task.accuracies = json.dumps(metrics)
     except MetricsError as err:
         task.status = 'failed'
         task.errors = json.dumps({

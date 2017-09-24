@@ -41,7 +41,7 @@ async def tasks(request):
         task = Task(filename=filename)
 
     # Enqueue task excecution with the uuid
-    queue().enqueue('jobs.process_file', task.uid)
+    queue().enqueue('jobs.process_file', task.uid, timeout=3600)
 
     # Return to the user with the task uid and 201 created
 
@@ -69,8 +69,25 @@ async def task(_request, uid):
         'uid': task.uid,
         'status': task.status,
         'errors': json.loads(task.errors) if task.errors else None,
+        'progress': task.progress,
         'accuracies': json.loads(task.accuracies) if task.accuracies else None,
     })
+
+@APP.route('/tasks/cancel/<uid>', methods=['GET', 'OPTIONS'])
+async def cancel_task(_request, uid):
+    with db_session:
+        task = Task.select(lambda t: t.uid == uid).first()
+
+        if task is None:
+            return response.json(
+                {'error': f'A task with uid: "{uid}" was not found'},
+                status=400
+            )
+
+        task.canceled = True
+        return response.json(
+            {'Message': 'Canceling'}
+        )
 
 
 if __name__ == "__main__":

@@ -102,9 +102,7 @@ def accuracies(file_handler, n_workers):
     data = csv_content[:, 0:-1]
     labels = csv_content[:, -1]
 
-    results = dict()
-
-    for metric in NOT_BOOL_METRICS:
+    for i, metric in enumerate(NOT_BOOL_METRICS):
         matrix_distances = pairwise.pairwise_distances(
             data,
             metric=metric,
@@ -120,6 +118,10 @@ def accuracies(file_handler, n_workers):
         )
 
         name = metric if isinstance(metric, str) else metric.__name__
-        results[name] = accuracy_score(labels, supposed_labels)
 
-    return results
+        yield {
+            'progress': (i + 1) / len(NOT_BOOL_METRICS),
+            'accuracyName': name,
+            'accuracyResult': accuracy_score(labels, supposed_labels)
+        }
+
