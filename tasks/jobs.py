@@ -29,13 +29,16 @@ def process_file(uid):
     file = storage.open(task.filename, 'r')
     # Call metrics from here
     try:
-        for acc in accuracies(file, 4):
+        for acc in accuracies(file, 8):
             all_accuracies = (
                 json.loads(task.accuracies)
                 if task.accuracies else list()
             )
             all_accuracies.append(
-                {acc.get('accuracyName'): acc.get('accuracyResult')}
+                {
+                    'name': acc.get('accuracyName'),
+                    'result': acc.get('accuracyResult')
+                }
             )
 
             task.accuracies = json.dumps(all_accuracies)

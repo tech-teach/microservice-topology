@@ -1,0 +1,121 @@
+import React, {Component} from 'react';
+import ResultService from '../services/result';
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import CircularProgress from 'material-ui/CircularProgress';
+import FlatButton from 'material-ui/FlatButton';
+import {
+  Table,
+  TableBody,
+  TableHeader,
+  TableHeaderColumn,
+  TableRow,
+  TableRowColumn,
+} from 'material-ui/Table';
+import _ from 'lodash';
+
+
+const styles = {
+  uploadButton: {
+  verticalAlign: 'middle',
+  }
+};
+
+class Results extends Component {
+
+  constructor(props) {
+    super(props);
+    this.intervalId = null;
+    this.state = {
+      results: null,
+      progress: 0,
+    };
+  }
+
+  componentDidMount() {
+    const result = new ResultService();
+    if (this.props.uid) {
+      result.uid = this.props.uid;
+      this.intervalId = setInterval(
+        () => result.get(res => (
+              res.body.status === 'in progress' && !res.body.canceled
+            )?(
+              this.setState(
+                { results: res.body.accuracies, progress: res.body.progress }
+              )
+            ) : (
+              this.componentWillUnmount(res)
+            )
+        ),
+        1000,
+      );
+    }
+  }
+
+  componentWillUnmount(res) {
+    console.log('Killign the interval');
+    this.setState(
+      { results: res.body.accuracies, progress: res.body.progress }
+    )
+    clearInterval(this.intervalId);
+  }
+
+  cancelTask() {
+    const result = new ResultService();
+    if (this.props.uid) {
+      result.uid = this.props.uid;
+      result.getCancel(res => (
+          console.log(res)
+        )
+      )
+    }
+  }
+
+  render() {
+    return (
+      <MuiThemeProvider>
+        <div>
+          <center>
+            <p>progress of task: {(this.state.progress * 100).toFixed(0)}%</p>
+            <CircularProgress
+              mode="determinate"
+              value={this.state.progress * 100}
+              size={30}
+              thickness={3}
+              max={100}
+            />
+          </center>
+          <FlatButton
+            label="Cancel Task"
+            labelPosition="before"
+            style={styles.uploadButton}
+            containerElement="label"
+            onClick={this.cancelTask.bind(this)}
+          ></FlatButton>
+          <Table>
+            <TableHeader adjustForCheckbox={false} displaySelectAll={false}>
+              <TableRow>
+                <TableHeaderColumn>Metric</TableHeaderColumn>
+                <TableHeaderColumn>Accuracy</TableHeaderColumn>
+              </TableRow>
+            </TableHeader>
+            <TableBody displayRowCheckbox={false}>
+              {_.map(this.state.results, (accuracy, id) => (
+                <TableRow key={id}>
+                  <TableRowColumn>
+                    {accuracy.name}
+                  </TableRowColumn>
+                  <TableRowColumn>
+                    {accuracy.result}
+                  </TableRowColumn>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </MuiThemeProvider>
+    );
+  }
+}
+
+
+export default Results;

@@ -68,8 +68,9 @@ async def task(_request, uid):
     return response.json({
         'uid': task.uid,
         'status': task.status,
-        'errors': json.loads(task.errors) if task.errors else None,
         'progress': task.progress,
+        'canceled': task.canceled,
+        'errors': json.loads(task.errors) if task.errors else None,
         'accuracies': json.loads(task.accuracies) if task.accuracies else None,
     })
 
