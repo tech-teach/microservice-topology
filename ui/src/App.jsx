@@ -16,10 +16,5 @@ class App extends Component {
     );
   }
 }
-/*
-        <div>
-          <Htop ms={750} />
-        </div>
-*/
 
 export default App;
