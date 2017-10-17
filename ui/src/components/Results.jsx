@@ -12,7 +12,6 @@ import {
   TableRowColumn,
 } from 'material-ui/Table';
 import _ from 'lodash';
-import Htop from './Htop';
 
 
 const styles = {
@@ -49,6 +48,11 @@ class Results extends Component {
         ),
         1000,
       );
+    } else {
+      this.setState({
+        results: null,
+        progress: 0
+      })
     }
   }
 
@@ -70,15 +74,11 @@ class Results extends Component {
       )
     }
   }
-/*
-        <div>
-        </div>
-*/
+
   render() {
     return (
       <MuiThemeProvider>
         <div>
-        <Htop/>
           <center>
             <p>progress of task: {(this.state.progress * 100).toFixed(0)}%</p>
             <CircularProgress

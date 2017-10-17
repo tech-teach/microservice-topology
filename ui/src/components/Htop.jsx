@@ -3,8 +3,11 @@ import PropTypes from 'prop-types';
 import HtopService from '../services/htop';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import _ from 'lodash';
+import request from 'superagent';
 import {Radar} from 'react-chartjs-2';
 import Paper from 'material-ui/Paper';
+import FlatButton from 'material-ui/FlatButton';
+import Results from './Results'
 
 const style = {
   height: 300,
@@ -14,18 +17,53 @@ const style = {
   display: 'inline-block',
 };
 
+const styles = {
+  uploadButton: {
+  verticalAlign: 'middle',
+  },
+  uploadInput: {
+    cursor: 'pointer',
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    left: 0,
+    width: '100%',
+    opacity: 0,
+  },
+};
+
 class Htop extends Component {
 
   constructor(props) {
     super(props);
     this.intervalId = null;
     this.state = {
+      uid: null,
       cpu: null,
       memory: null,
-      data_usage: null,
-      data_frequency: null,
-      max_frequency: 0
+      dataUsage: null,
+      dataFrequency: null,
+      maxFrequency: 0,
+      activeButtons: true
     };
+  }
+
+  sendFile(event) {
+    const file = event.target.file.files[0];
+    console.log(file);
+    request
+      .post('http://localhost/tasks')
+      .attach('file', file)
+      .then(res => {
+        console.log(res);
+        this.setState(
+          {uid: res.body.uid}
+        )
+      }, err => {
+        console.log(err);
+      })
+    event.preventDefault();
   }
 
   componentDidMount() {
@@ -35,37 +73,41 @@ class Htop extends Component {
         {
           cpu: res.body.cpu,
           memory: res.body.memory,
-          data_usage: {
+          dataUsage: {
             labels: _.range(res.body.cpu.length),
             datasets: [{
               label: 'CPU Usage',
-              backgroundColor: 'rgba(255,99,132,0.2)',
-              borderColor: 'rgba(255,99,132,1)',
-              pointBackgroundColor: 'rgba(255,99,132,0.5)',
+              backgroundColor: 'rgba(46,154,254,0.2)',
+              borderColor: 'rgba(46,154,254,1)',
+              pointBackgroundColor: 'rgba(46,154,254,0.5)',
               pointBorderColor: '#fff',
               pointHoverBackgroundColor: '#fff',
               pointHoverBorderColor: 'rgba(255,99,132,1)',
               data: res.body.cpu.map((cpu) => cpu.percent)
             }]
           },
-          data_frequency: {
+          dataFrequency: {
             labels: _.range(res.body.cpu.length),
             datasets: [{
               label: 'CPU Frequency',
-              backgroundColor: 'rgba(255,99,132,0.2)',
-              borderColor: 'rgba(255,99,132,1)',
-              pointBackgroundColor: 'rgba(255,99,132,0.5)',
+              backgroundColor: 'rgba(46,154,254,0.2)',
+              borderColor: 'rgba(46,154,254,1)',
+              pointBackgroundColor: 'rgba(46,154,254,0.5)',
               pointBorderColor: '#fff',
               pointHoverBackgroundColor: '#fff',
               pointHoverBorderColor: 'rgba(255,99,132,1)',
               data: res.body.cpu.map((cpu) => cpu.frequency.current)
             }]
           },
-          max_frequency: res.body.cpu[0].frequency.max
+          maxFrequency: res.body.cpu[0].frequency.max
         },
       )),
       this.props.ms,
     );
+  }
+
+  makeOther(event) {
+    console.log('Other');
   }
 
   componentWillUnmount() {
@@ -76,28 +118,75 @@ class Htop extends Component {
     return (
       <MuiThemeProvider>
       <div>
-      <Paper style={style} zDepth={1} rounded={false}>
-        <Radar
-          data={this.state.data_usage?this.state.data_usage:{labels: [], datasets: [{data: []}]}}
-          options={{
-            scale: {ticks: {min: 0, max: 100}},
-            animation: {duration: 250}
-          }}
-          width={100}
-          height={100}
-        />
-      </Paper>
-      <Paper style={style} zDepth={1} rounded={false}>
-        <Radar
-          data={this.state.data_frequency?this.state.data_frequency:{labels: [], datasets: [{data: []}]}}
-          options={{
-            scale: {ticks: {min: 0, max: this.state.max_frequency}},
-            animation: {duration: 250}
-          }}
-          width={100}
-          height={100}
-        />
-      </Paper>
+        <div>
+          <div>
+            <Paper>
+              {this.state.activeButtons?(
+                <form
+                  encType="multipart/form-data"
+                  onSubmit={this.sendFile.bind(this)}
+                >
+                  <FlatButton
+                    label="Upload here CSV file"
+                    labelPosition="before"
+                    style={styles.uploadButton}
+                    containerElement="label"
+                  >
+                    <input
+                      style={styles.uploadInput}
+                      name='file'
+                      id="uploadFile"
+                      type="file"
+                    />
+                  </FlatButton>
+
+                  <FlatButton
+                    label="Process CSV"
+                    labelPosition="before"
+                    style={styles.uploadButton}
+                    containerElement="label"
+                  >
+                    <input
+                      style={styles.uploadInput}
+                      type="submit"
+                      value="Upload"
+                    />
+                  </FlatButton>
+                </form>
+              ) : (
+                <FlatButton
+                  label="Make other query"
+                  onClick={this.makeOther.bind(this)}
+                />
+              )}
+            </Paper>
+            <Paper style={style} zDepth={1} rounded={false}>
+              <Radar
+                data={this.state.dataUsage?this.state.dataUsage:{labels: [], datasets: [{data: []}]}}
+                options={{
+                  scale: {ticks: {min: 0, max: 100}},
+                  animation: {duration: 250}
+                }}
+                width={100}
+                height={100}
+              />
+            </Paper>
+            <Paper style={style} zDepth={1} rounded={false}>
+              <Radar
+                data={this.state.dataFrequency?this.state.dataFrequency:{labels: [], datasets: [{data: []}]}}
+                options={{
+                  scale: {ticks: {min: 0, max: this.state.maxFrequency}},
+                  animation: {duration: 250}
+                }}
+                width={100}
+                height={100}
+              />
+            </Paper>
+          </div>
+        </div>
+        <div>
+          {this.state.uid?<Results uid={this.state.uid}/>:""}
+        </div>
       </div>
       </MuiThemeProvider>
     );
