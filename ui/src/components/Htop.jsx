@@ -8,6 +8,7 @@ import {Radar} from 'react-chartjs-2';
 import Paper from 'material-ui/Paper';
 import FlatButton from 'material-ui/FlatButton';
 import Results from './Results'
+import CoreCountService from '../services/cpu'
 
 const style = {
   height: 300,
@@ -45,7 +46,8 @@ class Htop extends Component {
       dataUsage: null,
       dataFrequency: null,
       maxFrequency: 0,
-      activeUploadButtons: true
+      activeUploadButtons: true,
+      coreCount: 1
     };
   }
 
@@ -68,6 +70,10 @@ class Htop extends Component {
   }
 
   componentDidMount() {
+    const coreCountService = new CoreCountService();
+    coreCountService.get(
+      res => console.log('Core count:' + res.body.coreCount)//this.setState({coreCount: res.body.coreCount})
+    );
     const htop = new HtopService();
     this.intervalId = setInterval(
       () => htop.get(res => this.setState(

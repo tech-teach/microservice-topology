@@ -9,7 +9,7 @@ services:
         ports:
             - 80
         environment:
-            VIRTUAL_HOST: "*/htop"
+            VIRTUAL_HOST: "*/htop, */htop/*"
 
     tasks:
         image: tasks

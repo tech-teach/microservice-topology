@@ -1,3 +1,5 @@
+import multiprocessing
+
 from psutil import cpu_percent, cpu_freq, virtual_memory
 
 from sanic.response import json
@@ -8,6 +10,7 @@ from sanic_cors import CORS
 
 app = Sanic(__name__)
 CORS(app)
+core_count = multiprocessing.cpu_count()
 
 
 def get_cpu_info():
@@ -49,6 +52,9 @@ async def cpu(request):
         'interval': 0.3
     })
 
+@app.route('/htop/corecount', methods=['GET', 'OPTIONS'])
+async def cpu_cores(request):
+    return json({'coreCount': core_count})
 
 if __name__ == "__main__":
     app.run(
