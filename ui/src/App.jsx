@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
-import Htop from './components/Htop';
-import FileUpload from './components/FileUpload'
+// import Htop from './components/Htop';
+import Htop from './components/Htop'
 import './App.css';
 
 
@@ -10,10 +10,7 @@ class App extends Component {
     return (
       <div>
         <div className="App">
-          <FileUpload route='/tasks' />
-        </div>
-        <div>
-          <Htop ms={750} />
+          <Htop/>
         </div>
       </div>
     );

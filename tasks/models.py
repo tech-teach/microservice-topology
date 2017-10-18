@@ -1,6 +1,7 @@
 """
 Describes the database models.
 """
+import os
 import uuid
 
 from datetime import datetime
@@ -14,10 +15,20 @@ class Task(TASKS.Entity):
     """
     Describes a metrics evaluation task.
     """
-    uid = Required(uuid.UUID, default=uuid.uuid4)
+    uid = Required(str, default=lambda: uuid.uuid4().hex)
     filename = Required(str)
     status = Required(str, default='in progress')
     errors = Optional(str)
     accuracies = Optional(str)
+    progress = Optional(float, default=0.0)
+    canceled = Required(bool, default=False)
     created = Required(datetime, default=datetime.now())
     updated = Required(datetime, default=datetime.now())
+
+
+TASKS.bind(
+    'sqlite',
+    os.path.join(os.getenv('DB_STORAGE'), 'db.sqlite'),
+    create_db=True
+)
+TASKS.generate_mapping(create_tables=True)

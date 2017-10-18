@@ -1,12 +1,24 @@
-# internal libraries
-import multiprocessing
-from time import time
-import csv
-import sys
+"""
+Get some accuracies.
+"""
+
 
 # external libraries
 from sklearn.metrics import pairwise, accuracy_score
 import numpy as np
+
+
+class MetricsError(Exception):
+    pass
+
+
+class FileReadError(MetricsError):
+    pass
+
+
+class ProcessFileError(MetricsError):
+    pass
+
 
 __version__ = '0.1.0'
 
@@ -74,19 +86,23 @@ NOT_BOOL_METRICS = [
     # 'sqeuclidean',
 ]
 
-def get_accuracy(file_handler, n_workers):
+def accuracies(file_handler, n_workers):
+    """
+    Get a set of accuracies from a file.
+    """
 
-    csv_content = np.loadtxt(
-        file_handler,
-        delimiter=","
-    )
+    try:
+        csv_content = np.loadtxt(
+            file_handler,
+            delimiter=","
+        )
+    except ValueError as error:
+        raise FileReadError(error)
 
     data = csv_content[:, 0:-1]
     labels = csv_content[:, -1]
 
-    accuracies = dict()
-
-    for metric in NOT_BOOL_METRICS:
+    for i, metric in enumerate(NOT_BOOL_METRICS):
         matrix_distances = pairwise.pairwise_distances(
             data,
             metric=metric,
@@ -101,15 +117,11 @@ def get_accuracy(file_handler, n_workers):
             [labels[np.argmin(x)] for x in matrix_distances]
         )
 
-        accuracy = accuracy_score(labels, supposed_labels)
+        name = metric if isinstance(metric, str) else metric.__name__
+
         yield {
-            metric if isinstance(metric, str) else metric.__name__: accuracy
+            'progress': (i + 1) / len(NOT_BOOL_METRICS),
+            'accuracyName': name,
+            'accuracyResult': accuracy_score(labels, supposed_labels)
         }
 
-        '''
-        accuracies[
-            metric if isinstance(metric, str) else metric.__name__
-        ] = accuracy
-        '''
-
-    # return accuracies

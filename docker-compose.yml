@@ -18,12 +18,28 @@ services:
         ports:
             - 80
         environment:
-            VIRTUAL_HOST: "*/tasks/*"
+            VIRTUAL_HOST: "*/tasks, */tasks/*"
             FILE_STORAGE: /run/files
             DB_STORAGE: /run/db
         volumes:
             - file-storage:/run/files
             - database-storage:/run/db
+        depends_on:
+            - redis
+
+    worker:
+        image: tasks
+        build: ./tasks
+        command: rq worker -u redis://redis
+        environment:
+            VIRTUAL_HOST: "*/tasks, */tasks/*"
+            FILE_STORAGE: /run/files
+            DB_STORAGE: /run/db
+        volumes:
+            - file-storage:/run/files:ro
+            - database-storage:/run/db
+        depends_on:
+            - redis
 
     ui:
         image: ui
@@ -45,6 +61,12 @@ services:
             - tasks
             - ui
 
+    redis:
+        image: redis:alpine
+        volumes:
+            - queue-storage:/data
+
 volumes:
     file-storage:
     database-storage:
+    queue-storage:
