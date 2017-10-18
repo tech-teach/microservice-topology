@@ -45,12 +45,13 @@ class Htop extends Component {
       dataUsage: null,
       dataFrequency: null,
       maxFrequency: 0,
-      activeButtons: true
+      activeUploadButtons: true
     };
   }
 
   sendFile(event) {
     const file = event.target.file.files[0];
+    this.setState({activeUploadButtons: false});
     console.log(file);
     request
       .post('http://localhost/tasks')
@@ -106,14 +107,25 @@ class Htop extends Component {
     );
   }
 
-  makeOther(event) {
-    console.log('Other');
-  }
+  uploadAgain = () => {
+    this.setState({
+      activeUploadButtons: false,
+      activeUploadAgain: true
+    });
+  };
 
   componentWillUnmount() {
-    console.log('Killign the interval');
     clearInterval(this.intervalId);
   }
+
+  test = (event) => {
+    this.setState({
+      uid: null
+    }, () => {
+      this.setState({activeUploadAgain: false, activeUploadButtons:true})
+    });
+  }
+
   render() {
     return (
       <MuiThemeProvider>
@@ -121,7 +133,7 @@ class Htop extends Component {
         <div>
           <div>
             <Paper>
-              {this.state.activeButtons?(
+              {this.state.activeUploadButtons?(
                 <form
                   encType="multipart/form-data"
                   onSubmit={this.sendFile.bind(this)}
@@ -154,11 +166,17 @@ class Htop extends Component {
                   </FlatButton>
                 </form>
               ) : (
-                <FlatButton
-                  label="Make other query"
-                  onClick={this.makeOther.bind(this)}
-                />
+                ""
               )}
+              {this.state.activeUploadAgain?(
+                   <FlatButton
+                    label="Upload file again"
+                    onClick={this.test}
+                  />
+                ) : (
+                  ""
+                )
+              }
             </Paper>
             <Paper style={style} zDepth={1} rounded={false}>
               <Radar
@@ -185,7 +203,15 @@ class Htop extends Component {
           </div>
         </div>
         <div>
-          {this.state.uid?<Results uid={this.state.uid}/>:""}
+          {
+            this.state.uid?(
+              <Results uid={this.state.uid}
+                onEnd={this.uploadAgain}
+              />
+            ) : (
+              ""
+            )
+          }
         </div>
       </div>
       </MuiThemeProvider>

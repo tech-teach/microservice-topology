@@ -28,6 +28,7 @@ class Results extends Component {
     this.state = {
       results: null,
       progress: 0,
+      cancelVisible: true
     };
   }
 
@@ -57,16 +58,26 @@ class Results extends Component {
   }
 
   componentWillUnmount(res) {
-    console.log('Killign the interval');
-    this.setState(
-      { results: res.body.accuracies, progress: res.body.progress }
-    )
+    if (res) {
+      this.setState(
+        {
+          results: res.body.accuracies,
+          progress: res.body.progress,
+          cancelVisible: false
+        }
+      );    } else {
+      this.setState({
+        results: null, progress: 0
+      });
+    }
+    this.props.onEnd();
     clearInterval(this.intervalId);
   }
 
   cancelTask() {
     const result = new ResultService();
     if (this.props.uid) {
+      this.props.onEnd()
       result.uid = this.props.uid;
       result.getCancel(res => (
           console.log(res)
@@ -89,13 +100,17 @@ class Results extends Component {
               max={100}
             />
           </center>
-          <FlatButton
-            label="Cancel Task"
-            labelPosition="before"
-            style={styles.uploadButton}
-            containerElement="label"
-            onClick={this.cancelTask.bind(this)}
-          ></FlatButton>
+          {this.state.cancelVisible?(
+            <FlatButton
+              label="Cancel Task"
+              labelPosition="before"
+              style={styles.uploadButton}
+              containerElement="label"
+              onClick={this.cancelTask.bind(this)}
+            ></FlatButton>
+          ) : (
+            ""
+          )}
           <Table>
             <TableHeader adjustForCheckbox={false} displaySelectAll={false}>
               <TableRow>
