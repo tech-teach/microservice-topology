@@ -3,7 +3,7 @@ import request from 'superagent';
 
 class TaskService {
   constructor() {
-    this.url = 'http://localhost/tasks';
+    this.url = '/tasks';
   }
 
 

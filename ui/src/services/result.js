@@ -8,9 +8,8 @@ class ResultService {
   }
 
   get(then) {
-    console.log('http://localhost/tasks/' + this.uid);
     request
-      .get('http://localhost/tasks/' + this.uid)
+      .get('/tasks/' + this.uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);
@@ -18,9 +17,8 @@ class ResultService {
   }
 
   getCancel(then) {
-    console.log('http://localhost/tasks/cancel/' + this.uid);
     request
-      .get('http://localhost/tasks/cancel/' + this.uid)
+      .get('/tasks/cancel/' + this.uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);

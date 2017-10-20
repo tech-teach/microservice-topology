@@ -3,7 +3,7 @@ import request from 'superagent';
 
 class CoreCountService {
   constructor() {
-    this.url = 'http://localhost/htop/corecount';
+    this.url = '/htop/corecount';
   }
 
   get(then) {

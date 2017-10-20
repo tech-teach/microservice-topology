@@ -56,7 +56,7 @@ class Htop extends Component {
     this.setState({activeUploadButtons: false});
     console.log(file);
     request
-      .post('http://localhost/tasks')
+      .post('/tasks')
       .attach('file', file)
       .then(res => {
         console.log(res);
