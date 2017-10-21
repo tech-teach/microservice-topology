@@ -1,5 +1,5 @@
-import React, {Component} from 'react';
-import ResultService from '../services/result';
+import React, { Component } from 'react';
+import TaskService from '../services/task';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import CircularProgress from 'material-ui/CircularProgress';
 import FlatButton from 'material-ui/FlatButton';
@@ -16,7 +16,7 @@ import _ from 'lodash';
 
 const styles = {
   uploadButton: {
-  verticalAlign: 'middle',
+    verticalAlign: 'middle',
   }
 };
 
@@ -33,19 +33,18 @@ class Results extends Component {
   }
 
   componentDidMount() {
-    const result = new ResultService();
+    const task = new TaskService();
     if (this.props.uid) {
-      result.uid = this.props.uid;
       this.intervalId = setInterval(
-        () => result.get(res => (
-              res.body.status === 'in progress' && !res.body.canceled
-            )?(
-              this.setState(
-                { results: res.body.accuracies, progress: res.body.progress }
-              )
-            ) : (
-              this.componentWillUnmount(res)
+        () => task.fetch(this.props.uid, res => (
+          res.body.status === 'in progress' && !res.body.canceled
+        ) ? (
+            this.setState(
+              { results: res.body.accuracies, progress: res.body.progress }
             )
+          ) : (
+            this.componentWillUnmount(res)
+          )
         ),
         1000,
       );
@@ -65,7 +64,8 @@ class Results extends Component {
           progress: res.body.progress,
           cancelVisible: false
         }
-      );    } else {
+      );
+    } else {
       this.setState({
         results: null, progress: 0
       });
@@ -75,13 +75,12 @@ class Results extends Component {
   }
 
   cancelTask() {
-    const result = new ResultService();
+    const task = new TaskService();
     if (this.props.uid) {
       this.props.onEnd()
-      result.uid = this.props.uid;
-      result.getCancel(res => (
-          console.log(res)
-        )
+      task.cancel(this.props.uid, res => (
+        console.log(res)
+      )
       )
     }
   }
@@ -100,7 +99,7 @@ class Results extends Component {
               max={100}
             />
           </center>
-          {this.state.cancelVisible?(
+          {this.state.cancelVisible ? (
             <FlatButton
               label="Cancel Task"
               labelPosition="before"
@@ -109,8 +108,8 @@ class Results extends Component {
               onClick={this.cancelTask.bind(this)}
             ></FlatButton>
           ) : (
-            ""
-          )}
+              ""
+            )}
           <Table>
             <TableHeader adjustForCheckbox={false} displaySelectAll={false}>
               <TableRow>

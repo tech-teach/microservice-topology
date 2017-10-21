@@ -18,7 +18,7 @@ class ResultService {
 
   getCancel(then) {
     request
-      .get('/tasks/cancel/' + this.uid)
+      .delete('/tasks/' + this.uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);

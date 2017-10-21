@@ -17,6 +17,24 @@ class TaskService {
         else console.error(err);
       });
   }
+
+  fetch(uid, then) {
+    request
+      .get('/tasks/' + uid)
+      .end((err, res) => {
+        if (!err) then(res);
+        else console.log(err);
+      });
+  }
+
+  cancel(uid, then) {
+    request
+      .delete('/tasks/' + uid)
+      .end((err, res) => {
+        if (!err) then(res);
+        else console.log(err);
+      });
+  }
 }
 
 

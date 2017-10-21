@@ -1,10 +1,10 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import HtopService from '../services/htop';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import _ from 'lodash';
 import request from 'superagent';
-import {Radar} from 'react-chartjs-2';
+import { Radar } from 'react-chartjs-2';
 import Paper from 'material-ui/Paper';
 import FlatButton from 'material-ui/FlatButton';
 import Results from './Results'
@@ -13,14 +13,15 @@ import CoreCountService from '../services/cpu'
 const style = {
   height: 300,
   width: 300,
-  margin: 10,
+  margin: 20,
   textAlign: 'center',
   display: 'inline-block',
+  padding: 20,
 };
 
 const styles = {
   uploadButton: {
-  verticalAlign: 'middle',
+    verticalAlign: 'middle',
   },
   uploadInput: {
     cursor: 'pointer',
@@ -53,7 +54,7 @@ class Htop extends Component {
 
   sendFile(event) {
     const file = event.target.file.files[0];
-    this.setState({activeUploadButtons: false});
+    this.setState({ activeUploadButtons: false });
     console.log(file);
     request
       .post('/tasks')
@@ -61,7 +62,7 @@ class Htop extends Component {
       .then(res => {
         console.log(res);
         this.setState(
-          {uid: res.body.uid}
+          { uid: res.body.uid }
         )
       }, err => {
         console.log(err);
@@ -72,7 +73,8 @@ class Htop extends Component {
   componentDidMount() {
     const coreCountService = new CoreCountService();
     coreCountService.get(
-      res => console.log('Core count:' + res.body.coreCount)//this.setState({coreCount: res.body.coreCount})
+      res => console.log('Core count:' + res.body.coreCount)
+      //this.setState({coreCount: res.body.coreCount})
     );
     const htop = new HtopService();
     this.intervalId = setInterval(
@@ -128,98 +130,98 @@ class Htop extends Component {
     this.setState({
       uid: null
     }, () => {
-      this.setState({activeUploadAgain: false, activeUploadButtons:true})
+      this.setState({ activeUploadAgain: false, activeUploadButtons: true })
     });
   }
 
   render() {
     return (
       <MuiThemeProvider>
-      <div>
         <div>
           <div>
-            <Paper>
-              {this.state.activeUploadButtons?(
-                <form
-                  encType="multipart/form-data"
-                  onSubmit={this.sendFile.bind(this)}
-                >
-                  <FlatButton
-                    label="Upload here CSV file"
-                    labelPosition="before"
-                    style={styles.uploadButton}
-                    containerElement="label"
+            <div>
+              <Paper>
+                {this.state.activeUploadButtons ? (
+                  <form
+                    encType="multipart/form-data"
+                    onSubmit={this.sendFile.bind(this)}
                   >
-                    <input
-                      style={styles.uploadInput}
-                      name='file'
-                      id="uploadFile"
-                      type="file"
-                    />
-                  </FlatButton>
+                    <FlatButton
+                      label="Upload here CSV file"
+                      labelPosition="before"
+                      style={styles.uploadButton}
+                      containerElement="label"
+                    >
+                      <input
+                        style={styles.uploadInput}
+                        name='file'
+                        id="uploadFile"
+                        type="file"
+                      />
+                    </FlatButton>
 
+                    <FlatButton
+                      label="Process CSV"
+                      labelPosition="before"
+                      style={styles.uploadButton}
+                      containerElement="label"
+                    >
+                      <input
+                        style={styles.uploadInput}
+                        type="submit"
+                        value="Upload"
+                      />
+                    </FlatButton>
+                  </form>
+                ) : (
+                    ""
+                  )}
+                {this.state.activeUploadAgain ? (
                   <FlatButton
-                    label="Process CSV"
-                    labelPosition="before"
-                    style={styles.uploadButton}
-                    containerElement="label"
-                  >
-                    <input
-                      style={styles.uploadInput}
-                      type="submit"
-                      value="Upload"
-                    />
-                  </FlatButton>
-                </form>
-              ) : (
-                ""
-              )}
-              {this.state.activeUploadAgain?(
-                   <FlatButton
                     label="Upload file again"
                     onClick={this.test}
                   />
                 ) : (
+                    ""
+                  )
+                }
+              </Paper>
+              <Paper style={style} zDepth={1} rounded={false}>
+                <Radar
+                  data={this.state.dataUsage ? this.state.dataUsage : { labels: [], datasets: [{ data: [] }] }}
+                  options={{
+                    scale: { ticks: { min: 0, max: 100 } },
+                    animation: { duration: 250 }
+                  }}
+                  width={100}
+                  height={100}
+                />
+              </Paper>
+              <Paper style={style} zDepth={1} rounded={false}>
+                <Radar
+                  data={this.state.dataFrequency ? this.state.dataFrequency : { labels: [], datasets: [{ data: [] }] }}
+                  options={{
+                    scale: { ticks: { min: 0, max: this.state.maxFrequency } },
+                    animation: { duration: 250 }
+                  }}
+                  width={100}
+                  height={100}
+                />
+              </Paper>
+            </div>
+          </div>
+          <div>
+            {
+              this.state.uid ? (
+                <Results uid={this.state.uid}
+                  onEnd={this.uploadAgain}
+                />
+              ) : (
                   ""
                 )
-              }
-            </Paper>
-            <Paper style={style} zDepth={1} rounded={false}>
-              <Radar
-                data={this.state.dataUsage?this.state.dataUsage:{labels: [], datasets: [{data: []}]}}
-                options={{
-                  scale: {ticks: {min: 0, max: 100}},
-                  animation: {duration: 250}
-                }}
-                width={100}
-                height={100}
-              />
-            </Paper>
-            <Paper style={style} zDepth={1} rounded={false}>
-              <Radar
-                data={this.state.dataFrequency?this.state.dataFrequency:{labels: [], datasets: [{data: []}]}}
-                options={{
-                  scale: {ticks: {min: 0, max: this.state.maxFrequency}},
-                  animation: {duration: 250}
-                }}
-                width={100}
-                height={100}
-              />
-            </Paper>
+            }
           </div>
         </div>
-        <div>
-          {
-            this.state.uid?(
-              <Results uid={this.state.uid}
-                onEnd={this.uploadAgain}
-              />
-            ) : (
-              ""
-            )
-          }
-        </div>
-      </div>
       </MuiThemeProvider>
     );
   }
@@ -227,14 +229,14 @@ class Htop extends Component {
 
 
 Htop.propTypes = {
-    /**
-     * How often to query for htop data
-     */
-    ms: PropTypes.number
+  /**
+   * How often to query for htop data
+   */
+  ms: PropTypes.number
 }
 
 Htop.defaultProps = {
-    ms: 1000
+  ms: 1000
 }
 
 export default Htop;
