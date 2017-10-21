@@ -6,7 +6,6 @@ class TaskService {
     this.url = '/tasks';
   }
 
-
   post(then) {
     request
       .post(this.url)
