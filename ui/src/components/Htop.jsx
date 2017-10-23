@@ -1,14 +1,23 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import HtopService from '../services/htop';
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import _ from 'lodash';
-import request from 'superagent';
 import { Radar } from 'react-chartjs-2';
-import Paper from 'material-ui/Paper';
+
+import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import SelectField from 'material-ui/SelectField';
 import FlatButton from 'material-ui/FlatButton';
+import MenuItem from 'material-ui/MenuItem';
+import Paper from 'material-ui/Paper';
+import _ from 'lodash';
+
 import Results from './Results'
+
 import CoreCountService from '../services/cpu'
+import HtopService from '../services/htop';
+import TaskService from '../services/task';
+
+const coreCountService = new CoreCountService();
+const htopService = new HtopService();
+const taskService =  new TaskService();
 
 const style = {
   height: 300,
@@ -48,37 +57,26 @@ class Htop extends Component {
       dataFrequency: null,
       maxFrequency: 0,
       activeUploadButtons: true,
-      coreCount: 1
+      coreCount: 1,
+      selectedCores: 1
     };
   }
 
   sendFile(event) {
     const file = event.target.file.files[0];
-    this.setState({ activeUploadButtons: false });
-    console.log(file);
-    request
-      .post('/tasks')
-      .attach('file', file)
-      .then(res => {
-        console.log(res);
-        this.setState(
-          { uid: res.body.uid }
-        )
-      }, err => {
-        console.log(err);
-      })
+    taskService.post(file, res => (
+        this.setState({ uid: res.body.uid, activeUploadButtons: false })
+    ));
     event.preventDefault();
   }
 
   componentDidMount() {
-    const coreCountService = new CoreCountService();
-    coreCountService.get(
-      res => console.log('Core count:' + res.body.coreCount)
-      //this.setState({coreCount: res.body.coreCount})
-    );
-    const htop = new HtopService();
+    coreCountService.get(res => this.setState(
+        {coreCount: res.body.coreCount, selectedCores: res.body.coreCount}
+    ));
+
     this.intervalId = setInterval(
-      () => htop.get(res => this.setState(
+      () => htopService.get(res => this.setState(
         {
           cpu: res.body.cpu,
           memory: res.body.memory,
@@ -134,6 +132,10 @@ class Htop extends Component {
     });
   }
 
+  handleChangeCoreCount(event, index, coreCount) {
+    this.setState({selectedCores: coreCount});
+  }
+
   render() {
     return (
       <MuiThemeProvider>
@@ -145,6 +147,7 @@ class Htop extends Component {
                   <form
                     encType="multipart/form-data"
                     onSubmit={this.sendFile.bind(this)}
+                    id="fileForm"
                   >
                     <FlatButton
                       label="Upload here CSV file"
@@ -159,6 +162,20 @@ class Htop extends Component {
                         type="file"
                       />
                     </FlatButton>
+
+                    <SelectField
+                      style={styles.uploadButton}
+                      value={this.state.selectedCores}
+                      onChange={this.handleChangeCoreCount.bind(this)}
+                    >
+                      {_.map(_.range(0, this.state.coreCount), (i, id) => (
+                        <MenuItem
+                          value={i + 1}
+                          key={id}
+                          primaryText={`${i + 1} Cores`}
+                        />
+                      ))}
+                    </SelectField>
 
                     <FlatButton
                       label="Process CSV"

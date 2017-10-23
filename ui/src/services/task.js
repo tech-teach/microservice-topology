@@ -2,24 +2,19 @@ import request from 'superagent';
 
 
 class TaskService {
-  constructor() {
-    this.url = '/tasks';
-  }
-
-  post(then) {
+  post(file, then) {
     request
-      .post(this.url)
-      .set('Content-Type', 'multipart/form-data')
-      .send(this.props.file)
+      .post('http://localhost:8080/tasks')
+      .attach('file', file)
       .end((err, res) => {
         if (!err) then(res);
-        else console.error(err);
+        else console.log(err);
       });
   }
 
   fetch(uid, then) {
     request
-      .get('/tasks/' + uid)
+      .get('http://localhost:8080/tasks/' + uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);
@@ -28,7 +23,7 @@ class TaskService {
 
   cancel(uid, then) {
     request
-      .delete('/tasks/' + uid)
+      .delete('http://localhost:8080/tasks/' + uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import TaskService from '../services/task';
+
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import CircularProgress from 'material-ui/CircularProgress';
 import FlatButton from 'material-ui/FlatButton';
@@ -13,6 +13,9 @@ import {
 } from 'material-ui/Table';
 import _ from 'lodash';
 
+import TaskService from '../services/task';
+
+const taskService =  new TaskService();
 
 const styles = {
   uploadButton: {
@@ -24,64 +27,77 @@ class Results extends Component {
 
   constructor(props) {
     super(props);
-    this.intervalId = null;
+    this.taskProgressIntervalId = null;
+    this.cancelIntervalId = null;
     this.state = {
-      results: null,
-      progress: 0,
+      taskStatus: null,
+      taskResults: null,
+      taskProgress: 0,
       cancelVisible: true
     };
   }
 
+  progressIntervalKiller() {
+    if(this.state.taskProgress === 1) {
+      clearInterval(this.taskProgressIntervalId);
+      this.setState({cancelVisible: false});
+      this.props.onEnd();
+    }
+  }
+
   componentDidMount() {
-    const task = new TaskService();
     if (this.props.uid) {
-      this.intervalId = setInterval(
-        () => task.fetch(this.props.uid, res => (
-          res.body.status === 'in progress' && !res.body.canceled
-        ) ? (
+      this.taskProgressIntervalId = setInterval(
+        () => taskService.fetch(this.props.uid, res => (
             this.setState(
-              { results: res.body.accuracies, progress: res.body.progress }
+              {
+                taskResults: res.body.accuracies,
+                taskProgress: res.body.progress,
+                taskStatus: res.body.status
+              },
+              () => this.progressIntervalKiller()
             )
-          ) : (
-            this.componentWillUnmount(res)
           )
         ),
         1000,
       );
     } else {
       this.setState({
-        results: null,
-        progress: 0
+        taskResults: null,
+        taskProgress: 0
       })
     }
   }
 
-  componentWillUnmount(res) {
-    if (res) {
-      this.setState(
-        {
-          results: res.body.accuracies,
-          progress: res.body.progress,
-          cancelVisible: false
-        }
-      );
-    } else {
-      this.setState({
-        results: null, progress: 0
-      });
+  componentWillUnmount() {
+    this.setState({taskResults: null, taskProgress: 0});
+  }
+
+  cancelIntervalKiller(){
+    if(this.state.taskStatus === 'complete') {
+      clearInterval(this.cancelIntervalId);
+      this.props.onEnd();
     }
-    this.props.onEnd();
-    clearInterval(this.intervalId);
+  }
+
+  fetchTaskEnd() {
+    this.cancelIntervalId = setInterval(
+      () => taskService.fetch(this.props.uid, res => (
+          this.setState(
+            { taskStatus: res.body.status },
+            () => this.cancelIntervalKiller()
+          )
+        )
+      ),
+      1000,
+    );
   }
 
   cancelTask() {
-    const task = new TaskService();
     if (this.props.uid) {
-      this.props.onEnd()
-      task.cancel(this.props.uid, res => (
-        console.log(res)
-      )
-      )
+      this.setState({cancelVisible: false});
+      this.progressIntervalKiller();
+      taskService.cancel(this.props.uid, res => this.fetchTaskEnd());
     }
   }
 
@@ -90,10 +106,10 @@ class Results extends Component {
       <MuiThemeProvider>
         <div>
           <center>
-            <p>progress of task: {(this.state.progress * 100).toFixed(0)}%</p>
+            <p>progress of task: {(this.state.taskProgress * 100).toFixed(0)}%</p>
             <CircularProgress
               mode="determinate"
-              value={this.state.progress * 100}
+              value={this.state.taskProgress * 100}
               size={30}
               thickness={3}
               max={100}
@@ -118,7 +134,7 @@ class Results extends Component {
               </TableRow>
             </TableHeader>
             <TableBody displayRowCheckbox={false}>
-              {_.map(this.state.results, (accuracy, id) => (
+              {_.map(this.state.taskResults, (accuracy, id) => (
                 <TableRow key={id}>
                   <TableRowColumn>
                     {accuracy.name}

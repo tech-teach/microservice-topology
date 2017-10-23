@@ -21,7 +21,7 @@ class Task(TASKS.Entity):
     errors = Optional(str)
     accuracies = Optional(str)
     progress = Optional(float, default=0.0)
-    canceled = Required(bool, default=False)
+    canceled = Required(bool, default=False, volatile=True)
     created = Required(datetime, default=datetime.now())
     updated = Required(datetime, default=datetime.now())
 

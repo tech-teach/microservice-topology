@@ -57,6 +57,9 @@ class TaskListResource(views.HTTPMethodView):
             'fileCreated': created
         }, status=201)
 
+    def options(self, _request):
+        return response.json({})
+
 
 
 class TasksDetailResource(views.HTTPMethodView):
@@ -104,6 +107,9 @@ class TasksDetailResource(views.HTTPMethodView):
             return response.json(
                 {'message': 'canceling'}
             )
+
+    def options(self, _request, uid):
+        return response.json({})
 
 
 APP.add_route(TaskListResource.as_view(), '/tasks')
