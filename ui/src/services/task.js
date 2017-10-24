@@ -2,9 +2,10 @@ import request from 'superagent';
 
 
 class TaskService {
-  post(file, then) {
+  post(file, numCores, then) {
     request
       .post('http://localhost:8080/tasks')
+      .field('numCores', numCores)
       .attach('file', file)
       .end((err, res) => {
         if (!err) then(res);

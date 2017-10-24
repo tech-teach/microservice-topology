@@ -33,9 +33,13 @@ class TaskListResource(views.HTTPMethodView):
         if request.method == 'OPTIONS':
             return response.json({})
 
+        num_cores = request.form.get('numCores', None)
         file = request.files.get('file')
-        if file is None:
-            return response.json({'error': 'A file is required'}, status=400)
+        if file is None or num_cores is None:
+            return response.json(
+                {'error': 'A file and number of cores is required'},
+                status=400
+            )
 
         # Further validate file if need be
 
@@ -45,7 +49,7 @@ class TaskListResource(views.HTTPMethodView):
 
         # Create Task row in the database
         with db_session:
-            task = Task(filename=filename)
+            task = Task(filename=filename, cores=num_cores)
 
         # Enqueue task excecution with the uuid
         queue().enqueue('jobs.process_file', task.uid, timeout=3600)
@@ -54,7 +58,8 @@ class TaskListResource(views.HTTPMethodView):
 
         return response.json({
             'uid': task.uid,
-            'fileCreated': created
+            'fileCreated': created,
+            'numCores': num_cores
         }, status=201)
 
     def options(self, _request):

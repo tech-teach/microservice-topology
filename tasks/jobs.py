@@ -28,8 +28,9 @@ def process_file(uid):
     with db_session:
         task = Task.select(lambda t: t.uid == uid).first()
         file = storage.open(task.filename, 'r')
+        cores = task.cores
         try:
-            for acc in accuracies(file, 8):
+            for acc in accuracies(file, cores):
                 all_accuracies = (
                     json.loads(task.accuracies)
                     if task.accuracies else list()
