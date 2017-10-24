@@ -3,7 +3,7 @@ import request from 'superagent';
 
 class HtopService {
   constructor() {
-    this.url = 'http://localhost:8080/htop';
+    this.url = '/htop';
   }
 
   get(then) {

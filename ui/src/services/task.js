@@ -4,7 +4,7 @@ import request from 'superagent';
 class TaskService {
   post(file, then) {
     request
-      .post('http://localhost:8080/tasks')
+      .post('/tasks')
       .attach('file', file)
       .end((err, res) => {
         if (!err) then(res);
@@ -14,7 +14,7 @@ class TaskService {
 
   fetch(uid, then) {
     request
-      .get('http://localhost:8080/tasks/' + uid)
+      .get('/tasks/' + uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);
@@ -23,7 +23,7 @@ class TaskService {
 
   cancel(uid, then) {
     request
-      .delete('http://localhost:8080/tasks/' + uid)
+      .delete('/tasks/' + uid)
       .end((err, res) => {
         if (!err) then(res);
         else console.log(err);
