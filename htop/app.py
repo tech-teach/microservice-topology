@@ -20,9 +20,9 @@ def get_cpu_info():
         {
             'percent': cpu_percents[i],
             'frequency': {
-                'current': cpu_frequencies[i].current if i < len(cpu_frequencies),
-                'min': cpu_frequencies[i].min if i < len(cpu_frequencies),
-                'max': cpu_frequencies[i].max if i < len(cpu_frequencies)
+                'current': cpu_frequencies[i].current if i < len(cpu_frequencies) else 0,
+                'min': cpu_frequencies[i].min if i < len(cpu_frequencies) else 0,
+                'max': cpu_frequencies[i].max if i < len(cpu_frequencies) else 0
              }
         }
         for i in range(len(cpu_percents))
