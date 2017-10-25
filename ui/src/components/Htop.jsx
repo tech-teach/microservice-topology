@@ -64,8 +64,11 @@ class Htop extends Component {
 
   sendFile(event) {
     const file = event.target.file.files[0];
-    taskService.post(file, res => (
-        this.setState({ uid: res.body.uid, activeUploadButtons: false })
+    taskService.post(file, this.state.selectedCores, res => (
+        this.setState(
+          { uid: res.body.uid, activeUploadButtons: false },
+          () => (console.log(res.body.numCores))
+        )
     ));
     event.preventDefault();
   }
