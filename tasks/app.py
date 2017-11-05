@@ -52,7 +52,7 @@ class TaskListResource(views.HTTPMethodView):
             task = Task(filename=filename, cores=num_cores)
 
         # Enqueue task excecution with the uuid
-        queue().enqueue('jobs.process_file', task.uid, timeout=3600)
+        queue().enqueue('jobs.process_file', task.uid, "C", timeout=3600)
 
         # Return to the user with the task uid and 201 created
 

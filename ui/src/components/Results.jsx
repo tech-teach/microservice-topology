@@ -33,11 +33,13 @@ class Results extends Component {
       taskStatus: null,
       taskResults: null,
       taskProgress: 0,
+      taskErrors: [],
       cancelVisible: true
     };
   }
 
   progressIntervalKiller() {
+    console.log(this.state);
     if(this.state.taskProgress === 1) {
       clearInterval(this.taskProgressIntervalId);
       this.setState({cancelVisible: false});
@@ -53,7 +55,8 @@ class Results extends Component {
               {
                 taskResults: res.body.accuracies,
                 taskProgress: res.body.progress,
-                taskStatus: res.body.status
+                taskStatus: res.body.status,
+                taskErrors: res.body.errors
               },
               () => this.progressIntervalKiller()
             )
