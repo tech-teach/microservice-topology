@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import CircularProgress from 'material-ui/CircularProgress';
 import FlatButton from 'material-ui/FlatButton';
+import Snackbar from 'material-ui/Snackbar';
 import {
   Table,
   TableBody,
@@ -34,15 +35,26 @@ class Results extends Component {
       taskResults: null,
       taskProgress: 0,
       taskErrors: [],
-      cancelVisible: true
+      cancelVisible: true,
+
+      snackOpen: false,
+      snackMessage: '',
+      snackHideDuration: 3000,
     };
   }
 
   progressIntervalKiller() {
     console.log(this.state);
-    if(this.state.taskProgress === 1) {
+    if((this.state.taskStatus === 'complete' || this.state.taskStatus === 'aborted') && this.taskProgressIntervalId) {
       clearInterval(this.taskProgressIntervalId);
-      this.setState({cancelVisible: false});
+
+      let messageTemp = this.state.taskStatus == 'complete'?'Completed':'Aborted';
+      this.setState({
+        cancelVisible: false,
+        snackOpen:true,
+        snackMessage: messageTemp
+      });
+      this.taskProgressIntervalId = null;
       this.props.onEnd();
     }
   }
@@ -77,7 +89,7 @@ class Results extends Component {
   }
 
   cancelIntervalKiller(){
-    if(this.state.taskStatus === 'complete') {
+    if(this.state.taskStatus === 'aborted') {
       clearInterval(this.cancelIntervalId);
       this.props.onEnd();
     }
@@ -102,6 +114,13 @@ class Results extends Component {
       this.progressIntervalKiller();
       taskService.cancel(this.props.uid, res => this.fetchTaskEnd());
     }
+  }
+
+  handleRequestSnackClose = () => {
+    this.setState({
+      snackOpen: false,
+      snackMessage: ''
+    });
   }
 
   render() {
@@ -149,6 +168,14 @@ class Results extends Component {
               ))}
             </TableBody>
           </Table>
+        <Snackbar
+          open={this.state.snackOpen}
+          action="Ok"
+          message={this.state.snackMessage}
+          autoHideDuration={this.state.snackHideDuration}
+          onActionTouchTap={this.handleRequestSnackClose}
+          onRequestClose={this.handleRequestSnackClose}
+        />
         </div>
       </MuiThemeProvider>
     );

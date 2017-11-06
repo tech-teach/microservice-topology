@@ -1,23 +1,34 @@
 from ctypes import *
 import json
+import ast
 
 NN = CDLL('./libNN.so')
 
 for distance in range(15):
-    args = ["_", "Data/tecator.csv", "8", str(distance)]
-    Args = c_char_p * len(args)
-    args = Args(
-        *[
-            c_char_p(arg.encode("utf-8"))
-            for arg in args
-        ]
+    file_rows = open("Data/tecator.csv", 'r').read().split('\n')
+    file_content = [
+        float(value)
+        for row in file_rows
+        for value in row.split(',')
+        if value != ''
+    ]
+
+    numfil = len(file_rows) - 1
+    numcol = len(file_rows[0].split(','))
+
+    file_content_c = (
+        (c_float * len(file_content))(*file_content)
     )
 
+    NN.main.restype=c_char_p
+    print(NN.main(8, distance, file_content_c, numfil, numcol))
+
+    '''
     NN.main.restype=c_char_p
 
     response = json.loads(
         str(
-            NN.main(len(args), args)
+            NN.main(8, 0, file_content_c)
         ).replace("'", '"')
     )
 
@@ -25,4 +36,6 @@ for distance in range(15):
         key.encode(): value.encode() if isinstance(value, unicode) else value
         for key, value in response.items()
     }
+
     print(response)
+    '''

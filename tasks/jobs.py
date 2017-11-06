@@ -29,13 +29,17 @@ def process_file(uid, language):
     """
     storage = StorageUnit()
     # Call metrics from here
-    with db_session:
-        task = Task.select(lambda t: t.uid == uid).first()
-        cores = task.cores
-        try:
-            if language == "Python":
+
+    try:
+        if language == "Python":
+            with db_session:
+                task = Task.select(lambda t: t.uid == uid).first()
                 file = storage.open(task.filename, 'r')
-                for acc in accuracies(file, cores):
+                cores = task.cores
+
+            for acc in accuracies(file, cores):
+                with db_session:
+                    task = Task.select(lambda t: t.uid == uid).first()
                     all_accuracies = (
                         json.loads(task.accuracies)
                         if task.accuracies else list()
@@ -50,30 +54,52 @@ def process_file(uid, language):
                     task.accuracies = json.dumps(all_accuracies)
                     task.progress = acc.get('progress')
 
-                    commit()
-
                     if task.canceled:
+                        task.status = 'aborted'
                         break
 
-                task.status = 'complete'
-            else:
-                file = storage.path(task.filename)
-                to_str = lambda value: (
-                    value.decode() if isinstance(value, bytes) else value
+            with db_session:
+                task = Task.select(lambda t: t.uid == uid).first()
+                if task.status != 'aborted':
+                    task.status = 'complete'
+
+
+        else:
+            to_str = lambda value: (
+                value.decode() if isinstance(value, bytes) else value
+            )
+
+            with db_session:
+                task = Task.select(lambda t: t.uid == uid).first()
+                file_rows = storage.open(task.filename, 'r').read().split('\n')
+                file_content = [
+                    float(value)
+                    for row in file_rows
+                    for value in row.split(',')
+                    if value != ''
+                ]
+
+                rows = len(file_rows) - 1
+                cols = len(file_rows[0].split(','))
+
+                file_content_c = (
+                    (c_float * len(file_content))(*file_content)
                 )
-                for distance in range(15):
-                    args = ["_", str(file), str(cores), str(distance)]
-                    Args = c_char_p * len(args)
-                    args = Args(
-                        *[
-                            c_char_p(arg.encode("utf-8"))
-                            for arg in args
-                        ]
-                    )
 
+                cores = task.cores
+
+
+            for distance in range(15):
+                with db_session:
+                    task = Task.select(lambda t: t.uid == uid).first()
                     NN.main.restype=c_char_p
-
-                    response = NN.main(len(args), args)
+                    response = NN.main(
+                        cores,
+                        distance,
+                        file_content_c,
+                        rows,
+                        cols
+                    )
 
                     try:
                         response_json = json.loads(
@@ -85,15 +111,13 @@ def process_file(uid, language):
                             for key, value in response_json.items()
                         }
                     except:
-                        task.status = 'complete'
+                        task.status = 'aborted'
                         task.progress = 1.0
-                        task.errors = json.dumps(['executionError', str(response)])
-                        break
-
-                    if 'errors' in response_json.keys():
-                        task.status = 'complete'
-                        task.progress = 1.0
-                        task.errors = json.dumps(['fileReadError', str(response)])
+                        all_errors = json.loads(
+                            task.errors
+                        ) if task.errors else list()
+                        all_errors.append('executionError')
+                        task.errors = all_errors
                         break
 
                     all_accuracies = (
@@ -111,17 +135,20 @@ def process_file(uid, language):
                     task.accuracies = json.dumps(all_accuracies)
                     task.progress = (distance + 1) / 15
 
-                    commit()
-
                     if task.canceled:
+                        task.status = 'aborted'
                         break
 
-                task.status = 'complete'
+            with db_session:
+                task = Task.select(lambda t: t.uid == uid).first()
+                if task.status != 'aborted':
+                    task.status = 'complete'
 
-        except MetricsError as err:
-            task.status = 'failed'
-            task.errors = json.dumps({
-                'error': 'Failed to process file.',
-                'message': f'{err}',
-            })
+
+    except MetricsError as err:
+        task.status = 'failed'
+        task.errors = json.dumps({
+            'error': 'Failed to process file.',
+            'message': f'{err}',
+        })
 

@@ -34,8 +34,9 @@ class TaskListResource(views.HTTPMethodView):
             return response.json({})
 
         num_cores = request.form.get('numCores', None)
+        language = request.form.get('language', None)
         file = request.files.get('file')
-        if file is None or num_cores is None:
+        if file is None or num_cores is None or language is None:
             return response.json(
                 {'error': 'A file and number of cores is required'},
                 status=400
@@ -52,7 +53,7 @@ class TaskListResource(views.HTTPMethodView):
             task = Task(filename=filename, cores=num_cores)
 
         # Enqueue task excecution with the uuid
-        queue().enqueue('jobs.process_file', task.uid, "C", timeout=3600)
+        queue().enqueue('jobs.process_file', task.uid, language, timeout=3600)
 
         # Return to the user with the task uid and 201 created
 

@@ -35,72 +35,8 @@ typedef struct thread_data{
   float *meanVector;
 } datastruct;
 datastruct *thread_data_array=NULL;
-#define tamvector       100
 
 
-int GetCPUCount()
-{
-  long nprocs = -1;
-  long nprocs_max = -1;
-  #ifdef _WIN32
-  #ifndef _SC_NPROCESSORS_ONLN
-  SYSTEM_INFO info;
-  GetSystemInfo(&info);
-  #define sysconf(a) info.dwNumberOfProcessors
-  #define _SC_NPROCESSORS_ONLN
-  #endif
-  #endif
-  #ifdef _SC_NPROCESSORS_ONLN
-  nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-  if (nprocs < 1)
-  {
-    fprintf(stderr, "Could not determine number of CPUs online:\n%s\n",
-    strerror (errno));
-    exit (EXIT_FAILURE);
-  }
-  nprocs_max = sysconf(_SC_NPROCESSORS_CONF);
-  if (nprocs_max < 1)
-  {
-    fprintf(stderr, "Could not determine number of CPUs configured:\n%s\n",
-    strerror (errno));
-    exit (EXIT_FAILURE);
-  }
-    return nprocs_max;
-    #else
-    fprintf(stderr, "Could not determine number of CPUs");
-    #endif
-    exit (EXIT_FAILURE);
-}
-
-/******************************************************************/
-void readFile(FILE *dataSet)
-{
-  int cont=0;
-  int resize=tamvector;
-  numfil=0;
-  char datos[2048];
-  char *tokens;
-  vectorData=(float*)malloc(sizeof(float)*tamvector);
-  while(fgets(datos,2048,dataSet))
-  {
-    numfil++;
-    tokens=strtok(datos,",");
-    numcol=0;
-    do
-    {
-      vectorData[cont]=atof(tokens);
-      tokens=strtok(NULL,",");
-      numcol++;
-      cont=cont+1; 
-      if((cont % tamvector) ==0)
-      {
-        resize+=tamvector;
-        vectorData=(float*)realloc(vectorData,sizeof(float)*resize);
-      }
-    }
-    while(tokens!=NULL);
-  }
-}
 
 /****************************************************************
  *                      Distances / Dissimilarity               *
@@ -612,7 +548,7 @@ void threadsKNN(int cores)
   int finalP;
   int i=0;
 
-  int residuo=numfil%cores; 
+  int residuo=numfil%cores;
   for (i=0; i<=particion; i++ )
   {
     inicioP = i * cores;
@@ -670,7 +606,7 @@ void KNN(int cores)
   clock_gettime(CLOCK_MONOTONIC, &end);
 }
 /****************************************************************/
-const char * main(int argc, char *argv[]) 
+const char * main(int cores, int distance, float * file_content, int fil, int col)
 {
   char *distancesName[15] = {
     "euclideanDist",
@@ -707,68 +643,22 @@ const char * main(int argc, char *argv[])
     cuadraticDist
   };
   int md=0;
-  int cores=GetCPUCount();
-  int hits=0;int i=0; 
+  int hits=0;
+  int i; 
   float accurancy=0;
-  char *nombreArchivo;
-  fptr =euclideanDist; 
-  int opcion=0;
-  struct timespec start, end;
   static char response[50];
 
-  switch(argc){
-    case 1:
-      exit(1);
-    case 2:
-      nombreArchivo=argv[1];
-    case 3:
-      cores=atoi(argv[2]);
-      if(cores==0)
-      {
-        cores=GetCPUCount();
-      }
-      nombreArchivo=argv[1];
-    case 4:
-      nombreArchivo=argv[1];
-      cores=atoi(argv[2]);
-      opcion=atoi(argv[3]);
-      if(cores==0)
-      {
-      cores=GetCPUCount();
-      }
-      if(opcion > 15)
-      {
-        opcion=0;
-      }
-      fptr = ptrvector[opcion];
-  }
+  fptr = ptrvector[distance];
+  vectorData = file_content;
+  numfil = fil;
+  numcol = col;
 
-
-  clock_gettime(CLOCK_MONOTONIC, &start);
-  FILE *dataSet=fopen(nombreArchivo,"r+");
-  if (dataSet==NULL)
-  {
-    sprintf(
-      response,
-      "{'fileName': '%s', 'numCores': '%s', 'distance': '%s', 'errors': 'fileReadError'}",
-      argv[1],
-      argv[2],
-      distancesName[opcion]
-    );
-
-    return response;
-  }
-
-  readFile(dataSet);
-  clock_gettime(CLOCK_MONOTONIC, &end);
   thread_data_array=(datastruct*)malloc(sizeof(datastruct)*numfil);
 
   if(thread_data_array==NULL)
   {
     exit(EXIT_FAILURE);
   }
-
-  clock_gettime(CLOCK_MONOTONIC, &start);
 
   KNN(cores);
   for(i=0;i<numfil;i++)
@@ -780,9 +670,12 @@ const char * main(int argc, char *argv[])
   }
   accurancy=(float)hits/(float)(numfil);
 
-  clock_gettime(CLOCK_MONOTONIC, &end);
-
-  sprintf(response, "{'accuracyName': '%s', 'accuracyResult': %f}", distancesName[opcion], accurancy);
+  sprintf(
+    response,
+    "{'accuracyName': '%s', 'accuracyResult': %f}",
+    distancesName[distance],
+    accurancy
+  );
 
   return response;
 }

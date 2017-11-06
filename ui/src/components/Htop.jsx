@@ -58,13 +58,14 @@ class Htop extends Component {
       maxFrequency: 0,
       activeUploadButtons: true,
       coreCount: 1,
-      selectedCores: 1
+      selectedCores: 1,
+      selectedLanguage: "Python"
     };
   }
 
   sendFile(event) {
     const file = event.target.file.files[0];
-    taskService.post(file, this.state.selectedCores, res => (
+    taskService.post(file, this.state.selectedCores, this.state.selectedLanguage, res => (
         this.setState(
           { uid: res.body.uid, activeUploadButtons: false }
         )
@@ -137,6 +138,9 @@ class Htop extends Component {
   handleChangeCoreCount(event, index, coreCount) {
     this.setState({selectedCores: coreCount});
   }
+  handleChangeLanguage(event, index, language) {
+    this.setState({selectedLanguage: language});
+  }
 
   render() {
     return (
@@ -175,6 +179,20 @@ class Htop extends Component {
                           value={i + 1}
                           key={id}
                           primaryText={`${i + 1} Cores`}
+                        />
+                      ))}
+                    </SelectField>
+
+                    <SelectField
+                      style={styles.uploadButton}
+                      value={this.state.selectedLanguage}
+                      onChange={this.handleChangeLanguage.bind(this)}
+                    >
+                      {_.map(["Python", "C"], (lan, id) => (
+                        <MenuItem
+                          value={lan}
+                          key={id}
+                          primaryText={lan}
                         />
                       ))}
                     </SelectField>
