@@ -1,0 +1,9 @@
+env=Environment()
+# El archivo source se guarda en
+# una libreria. Pueden haber X archivos source
+env.SharedLibrary(
+    target='NN.so',
+    source=['NN.c']
+)
+
+# Program('hola.c')

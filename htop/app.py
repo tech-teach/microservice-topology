@@ -14,19 +14,21 @@ core_count = multiprocessing.cpu_count()
 
 
 def get_cpu_info():
-    cpu_info = {
-        'percent': cpu_percent(interval=0.5, percpu=True),
-        'frequency': [
-            {
-                'current': freq.current,
-                'min': freq.min,
-                'max': freq.max
-            }
-            for freq in cpu_freq(percpu=True)
-        ]
-    }
+    cpu_percents = list(cpu_percent(interval=0.5, percpu=True))
+    cpu_frequencies = list(cpu_freq(percpu=True))
+    cpu_info = [
+        {
+            'percent': cpu_percents[i],
+            'frequency': {
+                'current': cpu_frequencies[i].current if i < len(cpu_frequencies) else 0,
+                'min': cpu_frequencies[i].min if i < len(cpu_frequencies) else 0,
+                'max': cpu_frequencies[i].max if i < len(cpu_frequencies) else 0
+             }
+        }
+        for i in range(len(cpu_percents))
+    ]
+    return cpu_info
 
-    return [dict(zip(cpu_info, col)) for col in zip(*cpu_info.values())]
 
 def get_memory_info():
     memory_info = virtual_memory()

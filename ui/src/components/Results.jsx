@@ -1,8 +1,9 @@
-import React, {Component} from 'react';
-import ResultService from '../services/result';
+import React, { Component } from 'react';
+
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import CircularProgress from 'material-ui/CircularProgress';
 import FlatButton from 'material-ui/FlatButton';
+import Snackbar from 'material-ui/Snackbar';
 import {
   Table,
   TableBody,
@@ -13,10 +14,13 @@ import {
 } from 'material-ui/Table';
 import _ from 'lodash';
 
+import TaskService from '../services/task';
+
+const taskService =  new TaskService();
 
 const styles = {
   uploadButton: {
-  verticalAlign: 'middle',
+    verticalAlign: 'middle',
   }
 };
 
@@ -24,66 +28,99 @@ class Results extends Component {
 
   constructor(props) {
     super(props);
-    this.intervalId = null;
+    this.taskProgressIntervalId = null;
+    this.cancelIntervalId = null;
     this.state = {
-      results: null,
-      progress: 0,
-      cancelVisible: true
+      taskStatus: null,
+      taskResults: null,
+      taskProgress: 0,
+      taskErrors: [],
+      cancelVisible: true,
+
+      snackOpen: false,
+      snackMessage: '',
+      snackHideDuration: 3000,
     };
   }
 
+  progressIntervalKiller() {
+    console.log(this.state);
+    if((this.state.taskStatus === 'complete' || this.state.taskStatus === 'aborted') && this.taskProgressIntervalId) {
+      clearInterval(this.taskProgressIntervalId);
+
+      let messageTemp = this.state.taskStatus == 'complete'?'Completed':'Aborted';
+      this.setState({
+        cancelVisible: false,
+        snackOpen:true,
+        snackMessage: messageTemp
+      });
+      this.taskProgressIntervalId = null;
+      this.props.onEnd();
+    }
+  }
+
   componentDidMount() {
-    const result = new ResultService();
     if (this.props.uid) {
-      result.uid = this.props.uid;
-      this.intervalId = setInterval(
-        () => result.get(res => (
-              res.body.status === 'in progress' && !res.body.canceled
-            )?(
-              this.setState(
-                { results: res.body.accuracies, progress: res.body.progress }
-              )
-            ) : (
-              this.componentWillUnmount(res)
+      this.taskProgressIntervalId = setInterval(
+        () => taskService.fetch(this.props.uid, res => (
+            this.setState(
+              {
+                taskResults: res.body.accuracies,
+                taskProgress: res.body.progress,
+                taskStatus: res.body.status,
+                taskErrors: res.body.errors
+              },
+              () => this.progressIntervalKiller()
             )
+          )
         ),
         1000,
       );
     } else {
       this.setState({
-        results: null,
-        progress: 0
+        taskResults: null,
+        taskProgress: 0
       })
     }
   }
 
-  componentWillUnmount(res) {
-    if (res) {
-      this.setState(
-        {
-          results: res.body.accuracies,
-          progress: res.body.progress,
-          cancelVisible: false
-        }
-      );    } else {
-      this.setState({
-        results: null, progress: 0
-      });
+  componentWillUnmount() {
+    this.setState({taskResults: null, taskProgress: 0});
+  }
+
+  cancelIntervalKiller(){
+    if(this.state.taskStatus === 'aborted') {
+      clearInterval(this.cancelIntervalId);
+      this.props.onEnd();
     }
-    this.props.onEnd();
-    clearInterval(this.intervalId);
+  }
+
+  fetchTaskEnd() {
+    this.cancelIntervalId = setInterval(
+      () => taskService.fetch(this.props.uid, res => (
+          this.setState(
+            { taskStatus: res.body.status },
+            () => this.cancelIntervalKiller()
+          )
+        )
+      ),
+      1000,
+    );
   }
 
   cancelTask() {
-    const result = new ResultService();
     if (this.props.uid) {
-      this.props.onEnd()
-      result.uid = this.props.uid;
-      result.getCancel(res => (
-          console.log(res)
-        )
-      )
+      this.setState({cancelVisible: false});
+      this.progressIntervalKiller();
+      taskService.cancel(this.props.uid, res => this.fetchTaskEnd());
     }
+  }
+
+  handleRequestSnackClose = () => {
+    this.setState({
+      snackOpen: false,
+      snackMessage: ''
+    });
   }
 
   render() {
@@ -91,16 +128,16 @@ class Results extends Component {
       <MuiThemeProvider>
         <div>
           <center>
-            <p>progress of task: {(this.state.progress * 100).toFixed(0)}%</p>
+            <p>progress of task: {(this.state.taskProgress * 100).toFixed(0)}%</p>
             <CircularProgress
               mode="determinate"
-              value={this.state.progress * 100}
+              value={this.state.taskProgress * 100}
               size={30}
               thickness={3}
               max={100}
             />
           </center>
-          {this.state.cancelVisible?(
+          {this.state.cancelVisible ? (
             <FlatButton
               label="Cancel Task"
               labelPosition="before"
@@ -109,8 +146,8 @@ class Results extends Component {
               onClick={this.cancelTask.bind(this)}
             ></FlatButton>
           ) : (
-            ""
-          )}
+              ""
+            )}
           <Table>
             <TableHeader adjustForCheckbox={false} displaySelectAll={false}>
               <TableRow>
@@ -119,7 +156,7 @@ class Results extends Component {
               </TableRow>
             </TableHeader>
             <TableBody displayRowCheckbox={false}>
-              {_.map(this.state.results, (accuracy, id) => (
+              {_.map(this.state.taskResults, (accuracy, id) => (
                 <TableRow key={id}>
                   <TableRowColumn>
                     {accuracy.name}
@@ -131,6 +168,14 @@ class Results extends Component {
               ))}
             </TableBody>
           </Table>
+        <Snackbar
+          open={this.state.snackOpen}
+          action="Ok"
+          message={this.state.snackMessage}
+          autoHideDuration={this.state.snackHideDuration}
+          onActionTouchTap={this.handleRequestSnackClose}
+          onRequestClose={this.handleRequestSnackClose}
+        />
         </div>
       </MuiThemeProvider>
     );

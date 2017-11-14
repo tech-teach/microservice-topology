@@ -1,26 +1,36 @@
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import HtopService from '../services/htop';
+import { Radar } from 'react-chartjs-2';
+
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import _ from 'lodash';
-import request from 'superagent';
-import {Radar} from 'react-chartjs-2';
-import Paper from 'material-ui/Paper';
+import SelectField from 'material-ui/SelectField';
 import FlatButton from 'material-ui/FlatButton';
+import MenuItem from 'material-ui/MenuItem';
+import Paper from 'material-ui/Paper';
+import _ from 'lodash';
+
 import Results from './Results'
+
 import CoreCountService from '../services/cpu'
+import HtopService from '../services/htop';
+import TaskService from '../services/task';
+
+const coreCountService = new CoreCountService();
+const htopService = new HtopService();
+const taskService =  new TaskService();
 
 const style = {
   height: 300,
   width: 300,
-  margin: 10,
+  margin: 20,
   textAlign: 'center',
   display: 'inline-block',
+  padding: 20,
 };
 
 const styles = {
   uploadButton: {
-  verticalAlign: 'middle',
+    verticalAlign: 'middle',
   },
   uploadInput: {
     cursor: 'pointer',
@@ -47,36 +57,29 @@ class Htop extends Component {
       dataFrequency: null,
       maxFrequency: 0,
       activeUploadButtons: true,
-      coreCount: 1
+      coreCount: 1,
+      selectedCores: 1,
+      selectedLanguage: "Python"
     };
   }
 
   sendFile(event) {
     const file = event.target.file.files[0];
-    this.setState({activeUploadButtons: false});
-    console.log(file);
-    request
-      .post('/tasks')
-      .attach('file', file)
-      .then(res => {
-        console.log(res);
+    taskService.post(file, this.state.selectedCores, this.state.selectedLanguage, res => (
         this.setState(
-          {uid: res.body.uid}
+          { uid: res.body.uid, activeUploadButtons: false }
         )
-      }, err => {
-        console.log(err);
-      })
+    ));
     event.preventDefault();
   }
 
   componentDidMount() {
-    const coreCountService = new CoreCountService();
-    coreCountService.get(
-      res => console.log('Core count:' + res.body.coreCount)//this.setState({coreCount: res.body.coreCount})
-    );
-    const htop = new HtopService();
+    coreCountService.get(res => this.setState(
+        {coreCount: res.body.coreCount, selectedCores: res.body.coreCount}
+    ));
+
     this.intervalId = setInterval(
-      () => htop.get(res => this.setState(
+      () => htopService.get(res => this.setState(
         {
           cpu: res.body.cpu,
           memory: res.body.memory,
@@ -128,98 +131,134 @@ class Htop extends Component {
     this.setState({
       uid: null
     }, () => {
-      this.setState({activeUploadAgain: false, activeUploadButtons:true})
+      this.setState({ activeUploadAgain: false, activeUploadButtons: true })
     });
+  }
+
+  handleChangeCoreCount(event, index, coreCount) {
+    this.setState({selectedCores: coreCount});
+  }
+  handleChangeLanguage(event, index, language) {
+    this.setState({selectedLanguage: language});
   }
 
   render() {
     return (
       <MuiThemeProvider>
-      <div>
         <div>
           <div>
-            <Paper>
-              {this.state.activeUploadButtons?(
-                <form
-                  encType="multipart/form-data"
-                  onSubmit={this.sendFile.bind(this)}
-                >
-                  <FlatButton
-                    label="Upload here CSV file"
-                    labelPosition="before"
-                    style={styles.uploadButton}
-                    containerElement="label"
+            <div>
+              <Paper>
+                {this.state.activeUploadButtons ? (
+                  <form
+                    encType="multipart/form-data"
+                    onSubmit={this.sendFile.bind(this)}
+                    id="fileForm"
                   >
-                    <input
-                      style={styles.uploadInput}
-                      name='file'
-                      id="uploadFile"
-                      type="file"
-                    />
-                  </FlatButton>
+                    <FlatButton
+                      label="Upload here CSV file"
+                      labelPosition="before"
+                      style={styles.uploadButton}
+                      containerElement="label"
+                    >
+                      <input
+                        style={styles.uploadInput}
+                        name='file'
+                        id="uploadFile"
+                        type="file"
+                      />
+                    </FlatButton>
 
+                    <SelectField
+                      style={styles.uploadButton}
+                      value={this.state.selectedCores}
+                      onChange={this.handleChangeCoreCount.bind(this)}
+                    >
+                      {_.map(_.range(0, this.state.coreCount), (i, id) => (
+                        <MenuItem
+                          value={i + 1}
+                          key={id}
+                          primaryText={`${i + 1} Cores`}
+                        />
+                      ))}
+                    </SelectField>
+
+                    <SelectField
+                      style={styles.uploadButton}
+                      value={this.state.selectedLanguage}
+                      onChange={this.handleChangeLanguage.bind(this)}
+                    >
+                      {_.map(["Python", "C"], (lan, id) => (
+                        <MenuItem
+                          value={lan}
+                          key={id}
+                          primaryText={lan}
+                        />
+                      ))}
+                    </SelectField>
+
+                    <FlatButton
+                      label="Process CSV"
+                      labelPosition="before"
+                      style={styles.uploadButton}
+                      containerElement="label"
+                    >
+                      <input
+                        style={styles.uploadInput}
+                        type="submit"
+                        value="Upload"
+                      />
+                    </FlatButton>
+                  </form>
+                ) : (
+                    ""
+                  )}
+                {this.state.activeUploadAgain ? (
                   <FlatButton
-                    label="Process CSV"
-                    labelPosition="before"
-                    style={styles.uploadButton}
-                    containerElement="label"
-                  >
-                    <input
-                      style={styles.uploadInput}
-                      type="submit"
-                      value="Upload"
-                    />
-                  </FlatButton>
-                </form>
-              ) : (
-                ""
-              )}
-              {this.state.activeUploadAgain?(
-                   <FlatButton
                     label="Upload file again"
                     onClick={this.test}
                   />
                 ) : (
+                    ""
+                  )
+                }
+              </Paper>
+              <Paper style={style} zDepth={1} rounded={false}>
+                <Radar
+                  data={this.state.dataUsage ? this.state.dataUsage : { labels: [], datasets: [{ data: [] }] }}
+                  options={{
+                    scale: { ticks: { min: 0, max: 100 } },
+                    animation: { duration: 250 }
+                  }}
+                  width={100}
+                  height={100}
+                />
+              </Paper>
+              <Paper style={style} zDepth={1} rounded={false}>
+                <Radar
+                  data={this.state.dataFrequency ? this.state.dataFrequency : { labels: [], datasets: [{ data: [] }] }}
+                  options={{
+                    scale: { ticks: { min: 0, max: this.state.maxFrequency } },
+                    animation: { duration: 250 }
+                  }}
+                  width={100}
+                  height={100}
+                />
+              </Paper>
+            </div>
+          </div>
+          <div>
+            {
+              this.state.uid ? (
+                <Results uid={this.state.uid}
+                  onEnd={this.uploadAgain}
+                />
+              ) : (
                   ""
                 )
-              }
-            </Paper>
-            <Paper style={style} zDepth={1} rounded={false}>
-              <Radar
-                data={this.state.dataUsage?this.state.dataUsage:{labels: [], datasets: [{data: []}]}}
-                options={{
-                  scale: {ticks: {min: 0, max: 100}},
-                  animation: {duration: 250}
-                }}
-                width={100}
-                height={100}
-              />
-            </Paper>
-            <Paper style={style} zDepth={1} rounded={false}>
-              <Radar
-                data={this.state.dataFrequency?this.state.dataFrequency:{labels: [], datasets: [{data: []}]}}
-                options={{
-                  scale: {ticks: {min: 0, max: this.state.maxFrequency}},
-                  animation: {duration: 250}
-                }}
-                width={100}
-                height={100}
-              />
-            </Paper>
+            }
           </div>
         </div>
-        <div>
-          {
-            this.state.uid?(
-              <Results uid={this.state.uid}
-                onEnd={this.uploadAgain}
-              />
-            ) : (
-              ""
-            )
-          }
-        </div>
-      </div>
       </MuiThemeProvider>
     );
   }
@@ -227,14 +266,14 @@ class Htop extends Component {
 
 
 Htop.propTypes = {
-    /**
-     * How often to query for htop data
-     */
-    ms: PropTypes.number
+  /**
+   * How often to query for htop data
+   */
+  ms: PropTypes.number
 }
 
 Htop.defaultProps = {
-    ms: 1000
+  ms: 1000
 }
 
 export default Htop;
