@@ -128,10 +128,10 @@ class Results extends Component {
       <MuiThemeProvider>
         <div>
           <center>
-            <p>progress of task: {(this.state.taskProgress * 100).toFixed(0)}%</p>
+            <p>progress of task: {this.state.taskProgress.toFixed(0)}%</p>
             <CircularProgress
               mode="determinate"
-              value={this.state.taskProgress * 100}
+              value={this.state.taskProgress}
               size={30}
               thickness={3}
               max={100}
@@ -153,6 +153,8 @@ class Results extends Component {
               <TableRow>
                 <TableHeaderColumn>Metric</TableHeaderColumn>
                 <TableHeaderColumn>Accuracy</TableHeaderColumn>
+                <TableHeaderColumn>Progress</TableHeaderColumn>
+                <TableHeaderColumn>Time in secs</TableHeaderColumn>
               </TableRow>
             </TableHeader>
             <TableBody displayRowCheckbox={false}>
@@ -162,7 +164,13 @@ class Results extends Component {
                     {accuracy.name}
                   </TableRowColumn>
                   <TableRowColumn>
-                    {accuracy.result}
+                    {accuracy.result || 'Waiting...'}
+                  </TableRowColumn>
+                  <TableRowColumn>
+                    {accuracy.progress}%
+                  </TableRowColumn>
+                  <TableRowColumn>
+                    {accuracy.time}
                   </TableRowColumn>
                 </TableRow>
               ))}
