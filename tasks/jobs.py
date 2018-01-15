@@ -1,6 +1,6 @@
-"""
+'''
 Abstract tasks.
-"""
+'''
 import json
 
 from pony.orm import db_session, commit
@@ -17,21 +17,21 @@ from metrics import accuracies, MetricsError
 NN = CDLL('./core/libNN.so')
 
 def queue():
-    """
+    '''
     Get ourselves a default queue.
-    """
+    '''
     return Queue(connection=Redis(host='redis'))
 
 
 def process_file(uid, language):
-    """
+    '''
     Process a file given an uid.
-    """
+    '''
     storage = StorageUnit()
     # Call metrics from here
 
     try:
-        if language == "Python":
+        if language == 'Python':
             with db_session:
                 task = Task.select(lambda t: t.uid == uid).first()
                 file = storage.open(task.filename, 'r')
@@ -44,15 +44,19 @@ def process_file(uid, language):
                         json.loads(task.accuracies)
                         if task.accuracies else list()
                     )
-                    all_accuracies.append(
-                        {
-                            'name': acc.get('accuracyName'),
-                            'result': acc.get('accuracyResult')
-                        }
-                    )
+                    data = {
+                        'name': acc.get('accuracyName'),
+                        'result': acc.get('accuracyResult'),
+                        'progress': acc.get('accuracyProgress'),
+                        'time': acc.get('accuracyTime')
+                    }
+                    if len(all_accuracies) > acc.get('accuracyKey'):
+                        all_accuracies[acc.get('accuracyKey')] = data
+                    else:
+                        all_accuracies.append(data)
 
                     task.accuracies = json.dumps(all_accuracies)
-                    task.progress = acc.get('progress')
+                    task.progress = acc.get('globalProgress')
 
                     if task.canceled:
                         task.status = 'aborted'
@@ -103,7 +107,7 @@ def process_file(uid, language):
 
                     try:
                         response_json = json.loads(
-                            to_str(response).replace("'", '"')
+                            to_str(response).replace(''', ''')
                         )
 
                         response_json = {
