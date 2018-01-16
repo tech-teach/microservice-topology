@@ -14,6 +14,8 @@ import {
 } from 'material-ui/Table';
 import _ from 'lodash';
 
+import { Line } from 'react-chartjs-2';
+
 import TaskService from '../services/task';
 
 const taskService =  new TaskService();
@@ -40,6 +42,8 @@ class Results extends Component {
       snackOpen: false,
       snackMessage: '',
       snackHideDuration: 3000,
+
+      showLineChart: false,
     };
   }
 
@@ -52,7 +56,8 @@ class Results extends Component {
       this.setState({
         cancelVisible: false,
         snackOpen:true,
-        snackMessage: messageTemp
+        snackMessage: messageTemp,
+        showLineChart: this.state.taskStatus == 'complete',
       });
       this.taskProgressIntervalId = null;
       this.props.onEnd();
@@ -128,10 +133,10 @@ class Results extends Component {
       <MuiThemeProvider>
         <div>
           <center>
-            <p>progress of task: {(this.state.taskProgress * 100).toFixed(0)}%</p>
+            <p>progress of task: {this.state.taskProgress.toFixed(0)}%</p>
             <CircularProgress
               mode="determinate"
-              value={this.state.taskProgress * 100}
+              value={this.state.taskProgress}
               size={30}
               thickness={3}
               max={100}
@@ -153,6 +158,8 @@ class Results extends Component {
               <TableRow>
                 <TableHeaderColumn>Metric</TableHeaderColumn>
                 <TableHeaderColumn>Accuracy</TableHeaderColumn>
+                <TableHeaderColumn>Progress</TableHeaderColumn>
+                <TableHeaderColumn>Time in secs</TableHeaderColumn>
               </TableRow>
             </TableHeader>
             <TableBody displayRowCheckbox={false}>
@@ -162,12 +169,59 @@ class Results extends Component {
                     {accuracy.name}
                   </TableRowColumn>
                   <TableRowColumn>
-                    {accuracy.result}
+                    {accuracy.result || 'Waiting...'}
+                  </TableRowColumn>
+                  <TableRowColumn>
+                    {accuracy.progress || 'N/A'}%
+                  </TableRowColumn>
+                  <TableRowColumn>
+                    {accuracy.time || 'N/A'}
                   </TableRowColumn>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+        {this.props.language == 'Python' && this.state.showLineChart && (
+          <Line
+            data={{
+              labels: this.state.taskResults.map(tr => tr.name),
+              datasets: [{
+                label: 'Time',
+                yAxisID: 'Time',
+                backgroundColor: 'rgba(46,154,254,0.2)',
+                borderColor: 'rgba(46,154,254,1)',
+                data: this.state.taskResults.map(tr => tr.time)
+              }, {
+                label: 'Accuracy',
+                yAxisID: 'Accuracy',
+                backgroundColor: 'rgba(46,200,254,0.2)',
+                borderColor: 'rgba(46,200,254,1)',
+                data: this.state.taskResults.map(tr => tr.result)
+              }]
+            }}
+            options={{
+              scales: {
+                yAxes: [{
+                  id: 'Time',
+                  type: 'linear',
+                  position: 'left',
+                }, {
+                  id: 'Accuracy',
+                  type: 'linear',
+                  position: 'right',
+                  ticks: {
+                    max: 1,
+                    min: 0
+                  }
+                }]
+              },
+              title: {
+                  display: true,
+                  text: this.props.fileName
+              }
+            }}
+          />
+        )}
         <Snackbar
           open={this.state.snackOpen}
           action="Ok"

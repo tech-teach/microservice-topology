@@ -11,7 +11,6 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'scikit-learn',
     ],
     url='https://github.com/tech-teach/microservice-topology',
     description='A metric accuracy meter.',
