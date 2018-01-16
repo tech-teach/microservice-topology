@@ -107,7 +107,7 @@ def process_file(uid, language):
 
                     try:
                         response_json = json.loads(
-                            to_str(response).replace(''', ''')
+                            to_str(response).replace('\'', '\"')
                         )
 
                         response_json = {
@@ -116,12 +116,12 @@ def process_file(uid, language):
                         }
                     except:
                         task.status = 'aborted'
-                        task.progress = 1.0
+                        task.progress = 0
                         all_errors = json.loads(
                             task.errors
                         ) if task.errors else list()
                         all_errors.append('executionError')
-                        task.errors = all_errors
+                        task.errors = json.dumps(all_errors)
                         break
 
                     all_accuracies = (

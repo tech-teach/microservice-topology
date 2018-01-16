@@ -167,10 +167,10 @@ class Results extends Component {
                     {accuracy.result || 'Waiting...'}
                   </TableRowColumn>
                   <TableRowColumn>
-                    {accuracy.progress}%
+                    {accuracy.progress || 'N/A'}%
                   </TableRowColumn>
                   <TableRowColumn>
-                    {accuracy.time}
+                    {accuracy.time || 'N/A'}
                   </TableRowColumn>
                 </TableRow>
               ))}
