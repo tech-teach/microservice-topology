@@ -59,12 +59,14 @@ class Htop extends Component {
       activeUploadButtons: true,
       coreCount: 1,
       selectedCores: 1,
-      selectedLanguage: "Python"
+      selectedLanguage: "Python",
+      fileName: null
     };
   }
 
   sendFile(event) {
     const file = event.target.file.files[0];
+    this.setState({fileName: file.name});
     taskService.post(file, this.state.selectedCores, this.state.selectedLanguage, res => (
         this.setState(
           { uid: res.body.uid, activeUploadButtons: false }
@@ -253,6 +255,7 @@ class Htop extends Component {
                 <Results uid={this.state.uid}
                   onEnd={this.uploadAgain}
                   language={this.state.selectedLanguage}
+                  fileName={this.state.fileName}
                 />
               ) : (
                   ""

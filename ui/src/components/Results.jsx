@@ -214,6 +214,10 @@ class Results extends Component {
                     min: 0
                   }
                 }]
+              },
+              title: {
+                  display: true,
+                  text: this.props.fileName
               }
             }}
           />
