@@ -252,6 +252,7 @@ class Htop extends Component {
               this.state.uid ? (
                 <Results uid={this.state.uid}
                   onEnd={this.uploadAgain}
+                  language={this.state.selectedLanguage}
                 />
               ) : (
                   ""

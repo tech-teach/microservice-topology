@@ -14,6 +14,8 @@ import {
 } from 'material-ui/Table';
 import _ from 'lodash';
 
+import { Line } from 'react-chartjs-2';
+
 import TaskService from '../services/task';
 
 const taskService =  new TaskService();
@@ -40,6 +42,8 @@ class Results extends Component {
       snackOpen: false,
       snackMessage: '',
       snackHideDuration: 3000,
+
+      showLineChart: false,
     };
   }
 
@@ -52,7 +56,8 @@ class Results extends Component {
       this.setState({
         cancelVisible: false,
         snackOpen:true,
-        snackMessage: messageTemp
+        snackMessage: messageTemp,
+        showLineChart: this.state.taskStatus == 'complete',
       });
       this.taskProgressIntervalId = null;
       this.props.onEnd();
@@ -176,6 +181,43 @@ class Results extends Component {
               ))}
             </TableBody>
           </Table>
+        {this.props.language == 'Python' && this.state.showLineChart && (
+          <Line
+            data={{
+              labels: this.state.taskResults.map(tr => tr.name),
+              datasets: [{
+                label: 'Time',
+                yAxisID: 'Time',
+                backgroundColor: 'rgba(46,154,254,0.2)',
+                borderColor: 'rgba(46,154,254,1)',
+                data: this.state.taskResults.map(tr => tr.time)
+              }, {
+                label: 'Accuracy',
+                yAxisID: 'Accuracy',
+                backgroundColor: 'rgba(46,200,254,0.2)',
+                borderColor: 'rgba(46,200,254,1)',
+                data: this.state.taskResults.map(tr => tr.result)
+              }]
+            }}
+            options={{
+              scales: {
+                yAxes: [{
+                  id: 'Time',
+                  type: 'linear',
+                  position: 'left',
+                }, {
+                  id: 'Accuracy',
+                  type: 'linear',
+                  position: 'right',
+                  ticks: {
+                    max: 1,
+                    min: 0
+                  }
+                }]
+              }
+            }}
+          />
+        )}
         <Snackbar
           open={this.state.snackOpen}
           action="Ok"
