@@ -57,10 +57,13 @@ def jaccard_tanimoto(u, v):
         )
     )
 
+def mahalanobis(u, v):
+    return ds.mahalanobis(u, v, np.cov(np.vstack((u, v)).T))
+
 NOT_BOOL_DISTANCES = [
-    # ds.minkowski,
+    ds.minkowski,
     ds.euclidean,
-    ds.chebyshev,
+    # ds.chebyshev, # lagrange
     lagrange,
     ds.canberra,
     lance_williams,
@@ -74,7 +77,7 @@ NOT_BOOL_DISTANCES = [
     ds.cityblock, # manhattan
     ds.braycurtis,
     ds.correlation,
-    # ds.mahalanobis,
+    mahalanobis,
 ]
 
 class DistanceAccuracy():
