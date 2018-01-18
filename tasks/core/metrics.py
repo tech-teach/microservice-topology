@@ -60,8 +60,11 @@ def jaccard_tanimoto(u, v):
 def mahalanobis(u, v):
     return ds.mahalanobis(u, v, np.cov(np.vstack((u, v)).T))
 
+def minkowski(u, v):
+    return ds.minkowski(u, v, 2)
+
 NOT_BOOL_DISTANCES = [
-    ds.minkowski,
+    minkowski,
     ds.euclidean,
     # ds.chebyshev, # lagrange
     lagrange,
