@@ -1,9 +1,13 @@
-import multiprocessing as mp
-from datetime import datetime
+"""
+Get some accuracies.
+"""
 import time
 
-import scipy.spatial.distance as ds
+
+# external libraries
+from sklearn.metrics import pairwise, accuracy_score
 import numpy as np
+
 
 class MetricsError(Exception):
     pass
@@ -15,6 +19,7 @@ class FileReadError(MetricsError):
 
 class ProcessFileError(MetricsError):
     pass
+
 
 __version__ = '0.1.0'
 
@@ -57,149 +62,79 @@ def jaccard_tanimoto(u, v):
         )
     )
 
-def mahalanobis(u, v):
-    return ds.mahalanobis(u, v, np.cov(np.vstack((u, v)).T))
-
-def minkowski(u, v):
-    return ds.minkowski(u, v, 2)
-
-NOT_BOOL_DISTANCES = [
-    minkowski,
-    ds.euclidean,
-    # ds.chebyshev, # lagrange
-    lagrange,
-    ds.canberra,
-    lance_williams,
-    soergel,
-    clark,
-    matusia,
-    wave_edges,
-    jaccard_tanimoto,
-    ds.hamming,
-    ds.cosine,
-    ds.cityblock, # manhattan
-    ds.braycurtis,
-    ds.correlation,
-    mahalanobis,
+NOT_BOOL_METRICS = [
+    'minkowski',
+    'manhattan',
+    'euclidean',
+    'chebyshev',
+    # lagrange,
+    'canberra',
+    # lance_williams,
+    # soergel,
+    # clark,
+    # matusia,
+    # wave_edges,
+    # jaccard_tanimoto,
+    'hamming',
+    'cosine',
+    'cityblock',
+    'braycurtis',
+    'correlation',
+    'mahalanobis',
+    # 'l2',
+    # 'l1',
+    # 'seuclidean',
+    # 'sqeuclidean',
 ]
 
-class DistanceAccuracy():
-    '''docstring for DistanceAccuracy'''
+def accuracies(file_handler, n_workers):
+    """
+    Get a set of accuracies from a file.
+    """
 
-    def process_csv(self, distance, n_workers):
-
-        mat_distances = mp.Manager().dict()
-
-        progress = mp.Manager().dict()
-
-        def distances(distance, index_list, mat_distances, worker, progress):
-            limit = len(index_list) - 1
-            for i, row_source_ind in enumerate(index_list):
-
-                progress[worker] = int(i / limit * 100)
-
-                temp_distance = [float('inf')] * row_source_ind
-                for row_target_ind in range(row_source_ind, self.rows):
-                    dist = distance(
-                        self.data[row_source_ind],
-                        self.data[row_target_ind]
-                    )
-                    temp_distance.append(dist if dist else float('inf'))
-                mat_distances[row_source_ind] = np.array(temp_distance)
-
-        indexes_step = self.rows / n_workers
-
-        indexes = [
-            [y for z in x for y in [z, self.rows - 1 - z]]
-            for x in [ list(range(
-                int(indexes_step * worker / 2),
-                (
-                    int(indexes_step * (worker + 1) / 2) + 1
-                    + int(worker == n_workers - 1)
-                )
-            )) for worker in range(n_workers)]
-        ]
-
-        workers = [
-            mp.Process(
-                target=distances,
-                args=(
-                    distance,
-                    index_list,
-                    mat_distances,
-                    worker,
-                    progress
-                )
-            )
-            for worker, index_list in enumerate(indexes)
-        ]
-
-        for worker in workers:
-            worker.start()
-
-        state = None
-        temp_state = None
-        while True in [x.is_alive() for x in workers]:
-            state = {
-                'progress': np.average(progress.values()),
-                'accuracy': None
-            }
-            if temp_state and state['progress'] != temp_state['progress']:
-                yield state
-            temp_state = state.copy()
-
-        np_mat_distances = np.array(
-            [
-                mat_distances[i]
-                for i in range(self.rows)
-            ]
-        )
-
-        for i in range(self.rows):
-            for j in range(i, self.rows):
-                np_mat_distances[j][i] = np_mat_distances[i][j]
-
-        r = [
-            (self.labels[i], self.labels[np.argmin(x)])
-            for i, x in enumerate(np_mat_distances)
-        ]
-
-        yield {
-            'progress': progress.values(),
-            'accuracy': sum(
-                [
-                    1 if i == j else 0
-                    for i, j in r
-                ]
-            ) / float(len(r))
-        }
-
-    def read_csv(self, file_handler):
+    try:
         csv_content = np.loadtxt(
             file_handler,
-            delimiter=','
+            delimiter=","
+        )
+    except ValueError as error:
+        raise FileReadError(error)
+
+    data = csv_content[:, 0:-1]
+    labels = csv_content[:, -1]
+
+    for i, metric in enumerate(NOT_BOOL_METRICS):
+        start = time.time()
+        name = metric if isinstance(metric, str) else metric.__name__
+        yield {
+            'globalProgress': i / len(NOT_BOOL_METRICS) * 100,
+            'accuracyProgress': 0,
+            'accuracyName': name,
+            'accuracyResult': 0,
+            'accuracyTime': 0,
+            'accuracyKey': i
+        }
+        matrix_distances = pairwise.pairwise_distances(
+            data,
+            metric=metric,
+            n_jobs=n_workers  # Number of workers
         )
 
-        self.rows = csv_content.shape[0]
-        self.columns = csv_content.shape[1]
-        self.data = csv_content[:, 0:-1]
-        self.labels = csv_content[:, -1]
+        # Replace zeros by infinity
+        # matrix_distances[matrix_distances == 0.0] = float("inf")
+        np.fill_diagonal(matrix_distances, float("inf"))
 
-def accuracies(file_handler, n_workers):
-    distance_accuracy = DistanceAccuracy()
-    distance_accuracy.read_csv(file_handler)
+        supposed_labels = np.array(
+            [labels[np.argmin(x)] for x in matrix_distances]
+        )
 
-    step = 1 / len(NOT_BOOL_DISTANCES)
-    for i, distance in enumerate(NOT_BOOL_DISTANCES):
-        start = time.time()
-        for result in distance_accuracy.process_csv(distance, n_workers):
-            accuracy_progress = np.average(result.get('progress'))
-            progress = step * accuracy_progress + (step * i * 100)
-            yield {
-                'globalProgress': progress,
-                'accuracyProgress': accuracy_progress,
-                'accuracyName': distance.__name__,
-                'accuracyResult': result.get('accuracy'),
-                'accuracyTime': time.time() - start,
-                'accuracyKey': i
-            }
+
+        yield {
+            'globalProgress': ((i + 1) / len(NOT_BOOL_METRICS)) * 100,
+            'accuracyProgress': 100,
+            'accuracyName': name,
+            'accuracyResult': accuracy_score(labels, supposed_labels),
+            'accuracyTime': time.time() - start,
+            'accuracyKey': i
+        }
+

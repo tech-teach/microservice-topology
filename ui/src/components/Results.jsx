@@ -52,12 +52,12 @@ class Results extends Component {
     if((this.state.taskStatus === 'complete' || this.state.taskStatus === 'aborted') && this.taskProgressIntervalId) {
       clearInterval(this.taskProgressIntervalId);
 
-      let messageTemp = this.state.taskStatus == 'complete'?'Completed':'Aborted';
+      let messageTemp = this.state.taskStatus === 'complete'?'Completed':'Aborted';
       this.setState({
         cancelVisible: false,
         snackOpen:true,
         snackMessage: messageTemp,
-        showLineChart: this.state.taskStatus == 'complete',
+        showLineChart: this.state.taskStatus === 'complete',
       });
       this.taskProgressIntervalId = null;
       this.props.onEnd();
@@ -158,7 +158,6 @@ class Results extends Component {
               <TableRow>
                 <TableHeaderColumn>Metric</TableHeaderColumn>
                 <TableHeaderColumn>Accuracy</TableHeaderColumn>
-                <TableHeaderColumn>Progress</TableHeaderColumn>
                 <TableHeaderColumn>Time in secs</TableHeaderColumn>
               </TableRow>
             </TableHeader>
@@ -172,16 +171,13 @@ class Results extends Component {
                     {accuracy.result || 'Waiting...'}
                   </TableRowColumn>
                   <TableRowColumn>
-                    {accuracy.progress || 'N/A'}%
-                  </TableRowColumn>
-                  <TableRowColumn>
-                    {accuracy.time || 'N/A'}
+                    {accuracy.time || 'Waiting...'}
                   </TableRowColumn>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        {this.props.language == 'Python' && this.state.showLineChart && (
+        {this.props.language === 'Python' && this.state.showLineChart && (
           <Line
             data={{
               labels: this.state.taskResults.map(tr => tr.name),
@@ -205,6 +201,10 @@ class Results extends Component {
                   id: 'Time',
                   type: 'linear',
                   position: 'left',
+                  scaleLabel: {
+                    display: true,
+                    labelString: 'Time'
+                  },
                 }, {
                   id: 'Accuracy',
                   type: 'linear',
@@ -212,7 +212,11 @@ class Results extends Component {
                   ticks: {
                     max: 1,
                     min: 0
-                  }
+                  },
+                  scaleLabel: {
+                    display: true,
+                    labelString: 'Accuracy'
+                  },
                 }]
               },
               title: {
