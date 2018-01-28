@@ -1,5 +1,5 @@
 sanic==0.7.0
-sanic-cors
+sanic-cors==0.9.3
 sklearn
 numpy
 scipy
