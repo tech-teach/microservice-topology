@@ -1,7 +1,7 @@
 sanic==0.7.0
 sanic-cors==0.9.3
 sklearn==0.0
-numpy==1.14.0
+numpy==1.15.0
 scipy==1.0.0
 pony==0.7.3
 rq==0.10.0
