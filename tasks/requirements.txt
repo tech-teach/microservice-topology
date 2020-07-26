@@ -4,4 +4,4 @@ sklearn==0.0
 numpy==1.14.0
 scipy==1.0.0
 pony==0.7.3
-rq==0.10.0
+rq==1.5.0
