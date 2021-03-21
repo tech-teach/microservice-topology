@@ -1,4 +1,4 @@
-sanic==0.7.0
+sanic==20.12.3
 sanic-cors==0.9.3
 sklearn==0.0
 numpy==1.14.0
