@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "chart.js": "^2.7.0",
+    "chart.js": "^2.9.4",
     "material-ui": "^0.19.1",
     "prop-types": "^15.5.10",
     "react": "^15.6.1",
